@@ -1,0 +1,215 @@
+Analise e melhore o layout atual do meu app de comparação de preços de mercado.
+
+Objetivo:
+
+Transformar a tela Home em uma experiência mais profissional, clara e útil para o usuário encontrar promoções próximas.
+
+Ajustes obrigatórios:
+
+1. Distância e localização
+
+- Adicionar distância da pessoa até o mercado em cada oferta.
+
+- Exemplo: “📍 1,2 km de você”
+
+- Adicionar também tempo estimado: “⏱️ 5 min”
+
+- No card principal e nos cards da lista, mostrar:
+
+  - nome do mercado
+
+  - bairro/cidade
+
+  - distância
+
+  - tempo estimado
+
+  - botão “Ver rota” ou “Ver no mapa”
+
+2. Mapa
+
+- Não colocar mapa gigante na Home.
+
+- Criar botão “Ver no mapa” para abrir uma tela/modal com mapa das ofertas próximas.
+
+- O mapa deve mostrar os mercados com promoções usando pins.
+
+- Ao tocar em um pin, mostrar:
+
+  - produto
+
+  - preço
+
+  - mercado
+
+  - distância
+
+  - botão “Ver oferta”
+
+3. Melhor custo-benefício
+
+- Criar lógica visual para não mostrar apenas o menor preço.
+
+- Adicionar um selo:
+
+  “Melhor custo-benefício”
+
+- Considerar preço + distância.
+
+- Exemplo:
+
+  Banana R$ 1,00 a 10 km não deve parecer melhor que Banana R$ 1,30 a 800 m.
+
+4. Corrigir textos
+
+- Corrigir “1 validações” para:
+
+  - “1 validação”
+
+  - “2 validações”
+
+- Corrigir qualquer erro visual ou textual como “Comper” se estiver escrito errado.
+
+- Padronizar nomes, espaçamentos e acentos.
+
+5. Evitar repetição
+
+- Se a oferta principal for Banana, não repetir a mesma oferta logo abaixo em “Confirmadas hoje”.
+
+- A seção “Confirmadas hoje” deve trazer outras ofertas ou versões complementares.
+
+6. Melhorar os CTAs
+
+Trocar botões genéricos por ações claras:
+
+- “Ver rota”
+
+- “Ver no mapa”
+
+- “Comparar preços”
+
+- “Validar oferta”
+
+7. Urgência e confiança
+
+Adicionar informações nos cards:
+
+- “Atualizado há X min”
+
+- “Confirmado hoje”
+
+- “Validado por X pessoas”
+
+- “Preço visto na loja”
+
+8. Economia estimada
+
+Adicionar destaque:
+
+- “Você economiza R$ X nesta oferta”
+
+- ou “Até X% mais barato que a média”
+
+9. Layout premium
+
+Manter o estilo dark premium com verde neon, mas melhorar:
+
+- hierarquia visual
+
+- espaçamentos
+
+- alinhamento dos cards
+
+- legibilidade dos textos
+
+- contraste dos botões
+
+- tamanho dos ícones
+
+- responsividade no mobile
+
+10. Barra inferior
+
+- Manter a navegação inferior.
+
+- Reduzir um pouco o brilho/tamanho do botão central “+” se estiver chamando atenção demais.
+
+- O botão “+” deve continuar sendo para cadastrar nova oferta.
+
+- Os ícones Home, Ofertas, Ranking e Perfil precisam ficar mais equilibrados visualmente.
+
+11. Nova estrutura ideal da Home
+
+A tela deve ficar assim:
+
+Topo:
+
+- Saudação
+
+- Título: “Economize no mercado”
+
+- Botão localizar
+
+Card principal:
+
+- Melhor oferta perto de você
+
+- Produto
+
+- Preço
+
+- Mercado
+
+- Bairro
+
+- Distância
+
+- Tempo estimado
+
+- Validações
+
+- Economia estimada
+
+- Botões: “Ver rota” e “Comparar”
+
+Cards de resumo:
+
+- Ofertas próximas
+
+- Menor preço
+
+- Economia do dia
+
+- Líder da comunidade
+
+Seção:
+
+- “Confirmadas hoje”
+
+- Lista de ofertas confirmadas com distância, validação e atualização
+
+Seção:
+
+- “Melhor custo-benefício”
+
+- Ofertas calculadas por preço + distância
+
+Botões:
+
+- “Ver no mapa”
+
+- “Ganhar pontos”
+
+Regras:
+
+- Não quebrar funcionalidades existentes.
+
+- Não remover dados reais/mockados já usados.
+
+- Se não existir geolocalização real ainda, criar estrutura preparada para latitude/longitude e usar dados mockados temporariamente.
+
+- O layout deve funcionar perfeitamente em mobile.
+
+- Evitar texto sobreposto, cortes e cards desalinhados.
+
+- Melhorar a experiência como se fosse um app profissional de economia de supermercado.

@@ -1,0 +1,1236 @@
+openapi: 3.1.0
+info:
+  title: Api
+  version: 0.1.0
+  description: Comparador de Preços API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: ofertas
+    description: Offer operations
+  - name: ranking
+    description: Ranking operations
+  - name: perfil
+    description: Profile operations
+  - name: admin
+    description: Admin operations
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /ofertas:
+    get:
+      operationId: listOfertas
+      tags: [ofertas]
+      summary: List offers
+      parameters:
+        - name: produto
+          in: query
+          schema:
+            type: string
+          description: Filter by product name
+        - name: categoria
+          in: query
+          schema:
+            type: string
+          description: Filter by category
+        - name: lat
+          in: query
+          schema:
+            type: number
+          description: User latitude
+        - name: lng
+          in: query
+          schema:
+            type: number
+          description: User longitude
+        - name: raio
+          in: query
+          schema:
+            type: number
+          description: Radius in kilometers
+        - name: ordenar
+          in: query
+          schema:
+            type: string
+            enum: [preco, distancia, validacoes, recente, score]
+          description: Sort order
+      responses:
+        "200":
+          description: List of offers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Oferta"
+    post:
+      operationId: createOferta
+      tags: [ofertas]
+      summary: Create a new offer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateOfertaBody"
+      responses:
+        "201":
+          description: Created offer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Oferta"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /ofertas/{id}:
+    delete:
+      operationId: deleteOferta
+      tags: [admin]
+      summary: Delete an offer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /ofertas/{id}/like:
+    post:
+      operationId: likeOferta
+      tags: [ofertas]
+      summary: Like an offer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActionBody"
+      responses:
+        "200":
+          description: Updated offer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Oferta"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /ofertas/{id}/validar:
+    post:
+      operationId: validarOferta
+      tags: [ofertas]
+      summary: Validate an offer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActionBody"
+      responses:
+        "200":
+          description: Updated offer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Oferta"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /ofertas/{id}/denunciar:
+    post:
+      operationId: denunciarOferta
+      tags: [ofertas]
+      summary: Report a suspicious offer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActionBody"
+      responses:
+        "200":
+          description: Updated offer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Oferta"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /ofertas/{id}/destacar:
+    post:
+      operationId: destacarOferta
+      tags: [admin]
+      summary: Toggle featured status on an offer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated offer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOferta"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /ofertas/{id}/patrocinar:
+    post:
+      operationId: patrocinarOferta
+      tags: [admin]
+      summary: Toggle sponsored status on an offer
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated offer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOferta"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /ofertas/{id}/resetar-denuncias:
+    post:
+      operationId: resetarDenunciasOferta
+      tags: [admin]
+      summary: Reset reports on an offer and mark as valid
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated offer
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminOferta"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /ranking:
+    get:
+      operationId: getRanking
+      tags: [ranking]
+      summary: Get user ranking by points
+      responses:
+        "200":
+          description: Ranking list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/UsuarioRanking"
+
+  /stats:
+    get:
+      operationId: getStats
+      tags: [ofertas]
+      summary: Get home statistics
+      responses:
+        "200":
+          description: Home stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HomeStats"
+
+  /alertas:
+    get:
+      operationId: getAlertas
+      tags: [alertas]
+      summary: List alerts for a user
+      parameters:
+        - name: usuarioId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Alerta"
+    post:
+      operationId: createAlerta
+      tags: [alertas]
+      summary: Create a price alert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAlertaBody"
+      responses:
+        "201":
+          description: Alert created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Alerta"
+
+  /alertas/matches:
+    get:
+      operationId: getAlertaMatches
+      tags: [alertas]
+      summary: Count current offers that match user alerts
+      parameters:
+        - name: usuarioId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Match count and matching offers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AlertaMatchResult"
+
+  /alertas/{id}:
+    delete:
+      operationId: deleteAlerta
+      tags: [alertas]
+      summary: Delete a price alert
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+
+  /usuarios:
+    post:
+      operationId: createUsuario
+      tags: [usuarios]
+      summary: Create a new user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUsuarioBody"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsuarioCriado"
+        "409":
+          description: CPF already registered
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "400":
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /usuarios/login:
+    post:
+      operationId: loginUsuario
+      tags: [usuarios]
+      summary: Login with CPF and telefone
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBody"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UsuarioCriado"
+        "401":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /perfil/{id}:
+    get:
+      operationId: getPerfil
+      tags: [perfil]
+      summary: Get user profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Perfil"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      tags: [admin]
+      summary: Get admin statistics
+      responses:
+        "200":
+          description: Admin stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
+  /admin/ofertas:
+    get:
+      operationId: getAdminOfertas
+      tags: [admin]
+      summary: Get all offers for admin
+      responses:
+        "200":
+          description: All offers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminOferta"
+
+  /admin/usuarios:
+    get:
+      operationId: getAdminUsuarios
+      tags: [admin]
+      summary: Get all users for admin
+      responses:
+        "200":
+          description: All users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminUsuario"
+
+  /historico:
+    get:
+      operationId: getHistoricoPrecos
+      tags: [ofertas]
+      summary: Get price history for a product
+      parameters:
+        - name: produto
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Price history sorted by date
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/HistoricoPrecoItem"
+
+  /economia:
+    get:
+      operationId: getEconomiaDiaria
+      tags: [ofertas]
+      summary: Get daily economy statistics
+      responses:
+        "200":
+          description: Economy statistics
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EconomiaDiaria"
+
+  /favoritos:
+    get:
+      operationId: listFavoritos
+      tags: [ofertas]
+      summary: List saved offers for a user
+      parameters:
+        - name: usuarioId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: List of saved offer IDs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: integer
+    post:
+      operationId: saveFavorito
+      tags: [ofertas]
+      summary: Save an offer to favorites
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SaveFavoritoBody"
+      responses:
+        "201":
+          description: Saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "409":
+          description: Already saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /favoritos/{ofertaId}:
+    delete:
+      operationId: removeFavorito
+      tags: [ofertas]
+      summary: Remove an offer from favorites
+      parameters:
+        - name: ofertaId
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: usuarioId
+          in: query
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Removed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SuccessResponse"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/usuarios/{id}/bloquear:
+    post:
+      operationId: bloquearUsuario
+      tags: [admin]
+      summary: Toggle block status on a user
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUsuario"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    Oferta:
+      type: object
+      properties:
+        id:
+          type: integer
+        produto:
+          type: string
+        categoria:
+          type: string
+        marca:
+          type: string
+          nullable: true
+        preco:
+          type: number
+        mercado:
+          type: string
+        bairro:
+          type: string
+          nullable: true
+        cidade:
+          type: string
+          nullable: true
+        fotoUrl:
+          type: string
+          nullable: true
+        validade:
+          type: string
+          nullable: true
+        latitude:
+          type: number
+          nullable: true
+        longitude:
+          type: number
+          nullable: true
+        dataCriacao:
+          type: string
+        curtidas:
+          type: integer
+        validacoes:
+          type: integer
+        denuncias:
+          type: integer
+        status:
+          type: string
+          enum: [nova, validada, suspeita, expirada]
+        usuario:
+          type: string
+        usuarioId:
+          type: integer
+        ultimaValidacaoEm:
+          type: string
+          nullable: true
+        score:
+          type: integer
+        nivelUsuario:
+          type: string
+          enum: [Iniciante, Explorador, "Caçador", Especialista, Mestre, Lenda]
+        distancia:
+          type: number
+          nullable: true
+        destacada:
+          type: boolean
+        patrocinada:
+          type: boolean
+        confirmacoes:
+          type: integer
+        ultimaConfirmacaoEm:
+          type: string
+          nullable: true
+        wasConfirmation:
+          type: boolean
+          description: "Present only in POST /ofertas response: true when the submission confirmed an existing offer instead of creating a new one."
+      required:
+        - id
+        - produto
+        - categoria
+        - preco
+        - mercado
+        - dataCriacao
+        - curtidas
+        - validacoes
+        - denuncias
+        - status
+        - usuario
+        - usuarioId
+        - score
+        - nivelUsuario
+        - destacada
+        - patrocinada
+        - confirmacoes
+
+    AdminOferta:
+      type: object
+      properties:
+        id:
+          type: integer
+        produto:
+          type: string
+        categoria:
+          type: string
+        marca:
+          type: string
+          nullable: true
+        preco:
+          type: number
+        mercado:
+          type: string
+        bairro:
+          type: string
+          nullable: true
+        cidade:
+          type: string
+          nullable: true
+        fotoUrl:
+          type: string
+          nullable: true
+        dataCriacao:
+          type: string
+        curtidas:
+          type: integer
+        validacoes:
+          type: integer
+        denuncias:
+          type: integer
+        status:
+          type: string
+          enum: [nova, validada, suspeita, expirada]
+        usuario:
+          type: string
+        usuarioId:
+          type: integer
+        score:
+          type: integer
+        nivelUsuario:
+          type: string
+          enum: [Iniciante, Explorador, "Caçador", Especialista, Mestre, Lenda]
+        destacada:
+          type: boolean
+        patrocinada:
+          type: boolean
+      required:
+        - id
+        - produto
+        - categoria
+        - preco
+        - mercado
+        - dataCriacao
+        - curtidas
+        - validacoes
+        - denuncias
+        - status
+        - usuario
+        - usuarioId
+        - score
+        - nivelUsuario
+        - destacada
+        - patrocinada
+
+    AdminUsuario:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        pontos:
+          type: integer
+        nivel:
+          type: string
+          enum: [Iniciante, Explorador, "Caçador", Especialista, Mestre, Lenda]
+        totalOfertas:
+          type: integer
+        bloqueado:
+          type: boolean
+      required:
+        - id
+        - nome
+        - pontos
+        - nivel
+        - totalOfertas
+        - bloqueado
+
+    AdminStats:
+      type: object
+      properties:
+        totalOfertas:
+          type: integer
+        ofertasHoje:
+          type: integer
+        confirmadosHoje:
+          type: integer
+        totalDenuncias:
+          type: integer
+        totalValidacoes:
+          type: integer
+        totalUsuarios:
+          type: integer
+      required:
+        - totalOfertas
+        - ofertasHoje
+        - confirmadosHoje
+        - totalDenuncias
+        - totalValidacoes
+        - totalUsuarios
+
+    ActionBody:
+      type: object
+      required:
+        - usuarioId
+      properties:
+        usuarioId:
+          type: integer
+          description: ID of the authenticated user performing the action
+
+    CreateOfertaBody:
+      type: object
+      properties:
+        produto:
+          type: string
+        categoria:
+          type: string
+        marca:
+          type: string
+          nullable: true
+        preco:
+          type: number
+        mercado:
+          type: string
+        bairro:
+          type: string
+          nullable: true
+        cidade:
+          type: string
+          nullable: true
+        fotoUrl:
+          type: string
+          nullable: true
+        validade:
+          type: string
+          nullable: true
+        latitude:
+          type: number
+          nullable: true
+        longitude:
+          type: number
+          nullable: true
+        usuarioId:
+          type: integer
+      required:
+        - produto
+        - categoria
+        - preco
+        - mercado
+        - usuarioId
+
+    Usuario:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        pontos:
+          type: integer
+      required:
+        - id
+        - nome
+        - pontos
+
+    UsuarioRanking:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        pontos:
+          type: integer
+        nivel:
+          type: string
+          enum: [Iniciante, Explorador, "Caçador", Especialista, Mestre, Lenda]
+      required:
+        - id
+        - nome
+        - pontos
+        - nivel
+
+    Alerta:
+      type: object
+      properties:
+        id:
+          type: integer
+        usuarioId:
+          type: integer
+        produto:
+          type: string
+        precoAlvo:
+          type: number
+        criadoEm:
+          type: string
+      required:
+        - id
+        - usuarioId
+        - produto
+        - precoAlvo
+        - criadoEm
+
+    CreateAlertaBody:
+      type: object
+      properties:
+        usuarioId:
+          type: integer
+        produto:
+          type: string
+        precoAlvo:
+          type: number
+      required:
+        - usuarioId
+        - produto
+        - precoAlvo
+
+    AlertaMatchOferta:
+      type: object
+      properties:
+        id:
+          type: integer
+        produto:
+          type: string
+        preco:
+          type: number
+        mercado:
+          type: string
+        bairro:
+          type: string
+          nullable: true
+        alertaProduto:
+          type: string
+        alertaPrecoAlvo:
+          type: number
+      required:
+        - id
+        - produto
+        - preco
+        - mercado
+        - alertaProduto
+        - alertaPrecoAlvo
+
+    AlertaMatchResult:
+      type: object
+      properties:
+        count:
+          type: integer
+        alertas:
+          type: array
+          items:
+            $ref: "#/components/schemas/Alerta"
+        ofertas:
+          type: array
+          items:
+            $ref: "#/components/schemas/AlertaMatchOferta"
+      required:
+        - count
+        - alertas
+        - ofertas
+
+    LoginBody:
+      type: object
+      properties:
+        cpf:
+          type: string
+        telefone:
+          type: string
+      required:
+        - cpf
+        - telefone
+
+    CreateUsuarioBody:
+      type: object
+      properties:
+        nome:
+          type: string
+        telefone:
+          type: string
+        cpf:
+          type: string
+        cidade:
+          type: string
+        estado:
+          type: string
+      required:
+        - nome
+        - telefone
+        - cpf
+        - cidade
+        - estado
+
+    UsuarioCriado:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        telefone:
+          type: string
+        cpf:
+          type: string
+        cidade:
+          type: string
+        estado:
+          type: string
+        pontos:
+          type: integer
+      required:
+        - id
+        - nome
+        - telefone
+        - cpf
+        - cidade
+        - estado
+        - pontos
+
+    Perfil:
+      type: object
+      properties:
+        id:
+          type: integer
+        nome:
+          type: string
+        pontos:
+          type: integer
+        nivel:
+          type: string
+          enum: [Iniciante, Explorador, "Caçador", Especialista, Mestre, Lenda]
+        streak:
+          type: integer
+        totalOfertas:
+          type: integer
+        totalValidacoesRecebidas:
+          type: integer
+        telefone:
+          type: string
+          nullable: true
+        cidade:
+          type: string
+          nullable: true
+        estado:
+          type: string
+          nullable: true
+      required:
+        - id
+        - nome
+        - pontos
+        - nivel
+        - streak
+        - totalOfertas
+        - totalValidacoesRecebidas
+
+    HomeStats:
+      type: object
+      properties:
+        totalOfertas:
+          type: integer
+        confirmadosHoje:
+          type: integer
+        menorPreco:
+          type: number
+          nullable: true
+        menorPrecoProduto:
+          type: string
+          nullable: true
+        lider:
+          nullable: true
+          allOf:
+            - $ref: "#/components/schemas/UsuarioRanking"
+      required:
+        - totalOfertas
+        - confirmadosHoje
+
+    HistoricoPrecoItem:
+      type: object
+      properties:
+        preco:
+          type: number
+        mercado:
+          type: string
+        cidade:
+          type: string
+          nullable: true
+        dataCriacao:
+          type: string
+        validacoes:
+          type: integer
+        status:
+          type: string
+      required:
+        - preco
+        - mercado
+        - dataCriacao
+        - validacoes
+        - status
+
+    EconomiaDiaria:
+      type: object
+      properties:
+        economiaTotal:
+          type: number
+        produtoMaisBarato:
+          type: string
+          nullable: true
+        precoProdutoMaisBarato:
+          type: number
+          nullable: true
+        mercadoMaisEconomico:
+          type: string
+          nullable: true
+        ofertasConfirmadasHoje:
+          type: integer
+        totalProdutosMonitorados:
+          type: integer
+      required:
+        - economiaTotal
+        - ofertasConfirmadasHoje
+        - totalProdutosMonitorados
+
+    SaveFavoritoBody:
+      type: object
+      required:
+        - usuarioId
+        - ofertaId
+      properties:
+        usuarioId:
+          type: integer
+        ofertaId:
+          type: integer
+
+    SuccessResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+      required:
+        - ok
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error

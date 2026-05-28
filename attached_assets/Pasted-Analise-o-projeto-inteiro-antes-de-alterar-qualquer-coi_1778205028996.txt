@@ -1,0 +1,207 @@
+Analise o projeto inteiro antes de alterar qualquer coisa.
+
+Objetivo:
+
+Evoluir o app de comparação de preços para trabalhar com agrupamento inteligente de ofertas por produto, melhorando a experiência quando existir mais de uma oferta do mesmo item.
+
+Regras importantes:
+
+- Não quebrar o login atual.
+
+- Usuários sem login podem ver ofertas normalmente.
+
+- Login continua obrigatório apenas para publicar, curtir, validar, denunciar, salvar e criar alertas.
+
+- Não remover funcionalidades existentes.
+
+- Manter React + TypeScript + Express + Drizzle + PostgreSQL.
+
+- Corrigir qualquer erro de tipagem ou build ao final.
+
+O que precisa ser feito:
+
+1. Criar uma experiência de “Produto com múltiplas ofertas”
+
+Hoje várias ofertas do mesmo produto aparecem separadas no feed.
+
+Quero que o app agrupe ofertas parecidas pelo nome do produto, marca e categoria.
+
+Exemplo:
+
+- Coca-Cola 2L
+
+- Coca Cola 2 litros
+
+- Coca-cola 2L
+
+Devem aparecer como um grupo único sempre que fizer sentido.
+
+2. Criar card agrupado no feed
+
+No feed principal, quando houver mais de uma oferta do mesmo produto, mostrar um card premium com:
+
+- nome do produto
+
+- imagem da melhor oferta
+
+- menor preço encontrado
+
+- maior preço encontrado
+
+- economia possível
+
+- quantidade de mercados encontrados
+
+- melhor mercado
+
+- distância, se disponível
+
+- selo de confiança
+
+- botão “Ver ofertas”
+
+Exemplo visual:
+
+“Coca-Cola 2L”
+
+“A partir de R$ 6,99”
+
+“3 mercados encontrados”
+
+“Economize até R$ 1,50”
+
+“Melhor preço: Mercado São João”
+
+3. Criar tela ou modal de comparação
+
+Ao clicar em “Ver ofertas”, abrir uma tela/modal com todas as ofertas daquele produto, ordenadas por:
+
+1. menor preço
+
+2. maior confiança
+
+3. menor distância
+
+4. mais recente
+
+Cada oferta dentro da comparação deve mostrar:
+
+- preço
+
+- mercado
+
+- bairro/cidade
+
+- distância
+
+- validade
+
+- usuário que publicou
+
+- nível do usuário
+
+- curtidas
+
+- validações
+
+- denúncias
+
+- status: novo, validado, suspeito ou expirado
+
+- botões de curtir, validar e denunciar
+
+4. Melhorar a lógica de melhor oferta
+
+A melhor oferta não deve ser apenas o menor preço.
+
+Use uma pontuação considerando:
+
+- preço mais baixo
+
+- oferta não expirada
+
+- mais validações
+
+- menos denúncias
+
+- distância menor, quando houver localização
+
+- oferta mais recente
+
+Criar uma função clara e reutilizável para isso.
+
+5. Melhorar busca
+
+A busca por produto deve encontrar ofertas mesmo com pequenas diferenças de escrita.
+
+Exemplo:
+
+- “coca cola”
+
+- “coca-cola”
+
+- “coca 2l”
+
+Também deve manter filtro por categoria funcionando junto com produto.
+
+6. Melhorar visual premium
+
+Refinar o layout dos cards para ficar mais exclusivo e menos com cara de template.
+
+Usar:
+
+- cards limpos
+
+- hierarquia forte de preço
+
+- selo “menor preço”
+
+- selo “confirmado hoje”
+
+- selo “múltiplos mercados”
+
+- visual mobile-first
+
+- espaçamento correto
+
+- textos sem sobreposição
+
+7. Adicionar estado vazio inteligente
+
+Quando não houver oferta encontrada, mostrar:
+
+“Não encontramos essa oferta ainda.”
+
+Botão:
+
+“Publicar primeira oferta”
+
+Se o usuário não estiver logado e clicar, abrir convite de login.
+
+8. Criar seção “Melhores comparações do dia”
+
+Na home, adicionar uma área com produtos que têm mais de uma oferta cadastrada.
+
+Mostrar:
+
+- produto
+
+- menor preço
+
+- economia
+
+- quantidade de mercados
+
+9. Garantir que ofertas expiradas não sejam prioridade
+
+Ofertas expiradas podem aparecer no histórico/comparação, mas nunca como melhor oferta principal.
+
+10. Ao final:
+
+- Rodar verificação de TypeScript/build.
+
+- Corrigir erros encontrados.
+
+- Garantir que a aplicação continue funcionando.
+
+- Explicar em resumo quais arquivos foram alterados e o que mudou.

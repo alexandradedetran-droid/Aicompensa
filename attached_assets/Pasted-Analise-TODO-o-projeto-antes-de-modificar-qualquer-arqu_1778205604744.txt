@@ -1,0 +1,473 @@
+Analise TODO o projeto antes de modificar qualquer arquivo.
+
+IMPORTANTE:
+
+- Não remover funcionalidades existentes.
+
+- Não quebrar rotas atuais.
+
+- Não alterar autenticação existente.
+
+- Usuários sem login continuam podendo visualizar promoções normalmente.
+
+- Login obrigatório apenas para publicar, curtir, validar, denunciar, salvar ofertas e criar alertas.
+
+- Manter React + TypeScript + Express + PostgreSQL + Drizzle ORM.
+
+- Manter compatibilidade mobile.
+
+- Corrigir TODOS os erros de TypeScript, build e runtime ao final.
+
+OBJETIVO PRINCIPAL:
+
+Transformar o sistema atual de “ofertas isoladas” em um sistema inteligente de “produto com múltiplas ofertas”, semelhante a um comparador de preços moderno.
+
+==================================================
+
+FASE 1 — MODELAGEM E AGRUPAMENTO
+
+==================================================
+
+1. Criar conceito de produto agrupado
+
+Hoje cada oferta aparece isoladamente.
+
+Quero agrupar automaticamente ofertas parecidas.
+
+Exemplos:
+
+- Coca-Cola 2L
+
+- Coca Cola 2 litros
+
+- coca-cola 2l
+
+Devem ser agrupadas como o mesmo produto.
+
+2. Criar normalização inteligente
+
+Criar função reutilizável para:
+
+- remover acentos
+
+- ignorar maiúsculas/minúsculas
+
+- ignorar hífen
+
+- ignorar plural simples
+
+- padronizar litros/kg/ml
+
+- remover espaços duplicados
+
+Exemplo:
+
+“Coca Cola 2 Litros”
+
+=> “coca cola 2l”
+
+3. Criar agrupamento por:
+
+- nome normalizado
+
+- categoria
+
+- marca, quando existir
+
+4. Criar score de relevância da oferta
+
+A melhor oferta NÃO deve ser apenas o menor preço.
+
+Criar algoritmo considerando:
+
+- menor preço
+
+- oferta não expirada
+
+- maior número de validações
+
+- menos denúncias
+
+- maior quantidade de curtidas
+
+- publicação recente
+
+- menor distância (quando localização existir)
+
+Criar função reutilizável:
+
+getBestOffer()
+
+==================================================
+
+FASE 2 — FEED NOVO
+
+==================================================
+
+5. Substituir feed atual por feed agrupado
+
+Quando existirem múltiplas ofertas do mesmo produto:
+
+mostrar apenas 1 card principal.
+
+Esse card deve mostrar:
+
+- imagem da melhor oferta
+
+- nome do produto
+
+- menor preço encontrado
+
+- maior preço encontrado
+
+- percentual/economia possível
+
+- quantidade de mercados encontrados
+
+- melhor mercado
+
+- selo “Melhor preço”
+
+- selo “Confirmado hoje”
+
+- selo “Múltiplos mercados”
+
+- quantidade de validações
+
+- botão “Ver ofertas”
+
+6. Melhorar visual premium
+
+Quero aparência mais moderna e exclusiva.
+
+Evitar aparência genérica de template Tailwind.
+
+Melhorar:
+
+- espaçamento
+
+- tipografia
+
+- hierarquia visual
+
+- sombras suaves
+
+- destaque forte no preço
+
+- melhor responsividade
+
+- evitar textos sobrepostos
+
+- melhorar experiência mobile-first
+
+7. Melhorar badges
+
+Criar badges visuais:
+
+- Menor preço
+
+- Validado
+
+- Suspeito
+
+- Expirado
+
+- Tendência
+
+- Mais curtido
+
+==================================================
+
+FASE 3 — COMPARADOR DE OFERTAS
+
+==================================================
+
+8. Criar tela/modal “Comparar ofertas”
+
+Ao clicar em “Ver ofertas”, abrir comparação completa.
+
+Ordenar por:
+
+1. melhor score
+
+2. menor preço
+
+3. mais validações
+
+4. menor distância
+
+5. mais recente
+
+Cada oferta deve mostrar:
+
+- preço
+
+- mercado
+
+- bairro/cidade
+
+- distância
+
+- validade
+
+- usuário que publicou
+
+- nível do usuário
+
+- score da oferta
+
+- curtidas
+
+- validações
+
+- denúncias
+
+- data de publicação
+
+- status da oferta
+
+9. Criar destaque visual da melhor oferta
+
+A melhor oferta deve ficar:
+
+- maior
+
+- destacada
+
+- com selo premium
+
+==================================================
+
+FASE 4 — BUSCA E FILTROS
+
+==================================================
+
+10. Melhorar busca inteligente
+
+Busca deve encontrar:
+
+- coca cola
+
+- coca-cola
+
+- coca
+
+- coca 2l
+
+Mesmo produto.
+
+11. Permitir filtros combinados
+
+Garantir funcionamento correto:
+
+- produto + categoria
+
+- produto + mercado
+
+- categoria + distância
+
+12. Corrigir possíveis bugs Drizzle
+
+NÃO usar concatenação manual SQL em filtros.
+
+Usar:
+
+- and()
+
+- or()
+
+- ilike()
+
+- eq()
+
+- inArray()
+
+==================================================
+
+FASE 5 — GEOLOCALIZAÇÃO E DISTÂNCIA
+
+==================================================
+
+13. Adicionar distância nas ofertas
+
+Quando houver localização:
+
+mostrar distância aproximada.
+
+Exemplo:
+
+“1,2 km de você”
+
+14. Criar ordenação por proximidade
+
+Permitir:
+
+- menor distância
+
+- melhor custo-benefício
+
+==================================================
+
+FASE 6 — RETENÇÃO E EXPERIÊNCIA
+
+==================================================
+
+15. Criar favoritos
+
+Usuário logado pode:
+
+- salvar produtos
+
+- salvar mercados
+
+16. Criar alertas de preço
+
+Exemplo:
+
+“Me avise quando Coca-Cola 2L ficar abaixo de R$ 7”
+
+17. Criar seção:
+
+“Melhores comparações do dia”
+
+Mostrar:
+
+- produtos mais pesquisados
+
+- maior economia
+
+- mais mercados comparados
+
+18. Criar estado vazio inteligente
+
+Quando não existir oferta:
+
+mostrar:
+
+“Não encontramos ofertas ainda.”
+
+Botão:
+
+“Publicar primeira oferta”
+
+Se usuário não estiver logado:
+
+abrir modal de login.
+
+==================================================
+
+FASE 7 — PERFORMANCE E ESCALABILIDADE
+
+==================================================
+
+19. Melhorar performance
+
+Evitar:
+
+- re-renderizações desnecessárias
+
+- consultas repetidas
+
+- loops pesados
+
+20. Criar paginação/infinite scroll
+
+No feed principal.
+
+21. Otimizar consultas SQL
+
+Criar índices para:
+
+- produto normalizado
+
+- categoria
+
+- mercado
+
+- data
+
+- score
+
+==================================================
+
+FASE 8 — CONFIANÇA E MODERAÇÃO
+
+==================================================
+
+22. Melhorar sistema de confiança
+
+Criar score do usuário baseado em:
+
+- ofertas validadas
+
+- denúncias recebidas
+
+- tempo na plataforma
+
+- curtidas recebidas
+
+23. Destacar usuários confiáveis
+
+Criar:
+
+- selo confiável
+
+- níveis
+
+- ranking
+
+24. Melhorar denúncias
+
+Ofertas suspeitas:
+
+- perdem prioridade
+
+- podem ficar ocultas automaticamente
+
+==================================================
+
+FASE 9 — FINALIZAÇÃO
+
+==================================================
+
+25. Rodar:
+
+- TypeScript check
+
+- build frontend
+
+- build backend
+
+26. Corrigir:
+
+- erros
+
+- warnings importantes
+
+- imports quebrados
+
+- tipagens incorretas
+
+27. Garantir:
+
+- responsividade total
+
+- funcionamento mobile
+
+- nenhuma tela quebrada
+
+- nenhuma sobreposição de texto
+
+28. Ao finalizar:
+
+Gerar resumo completo contendo:
+
+- arquivos alterados
+
+- novas funcionalidades
+
+- melhorias implementadas
+
+- possíveis melhorias futuras
+
+- problemas encontrados e corrigidos

@@ -1,0 +1,291 @@
+Agora evolua o app para uma versão mais profissional.
+
+MELHORIAS OBRIGATÓRIAS:
+
+1. Navegação por abas
+
+Criar menu inferior estilo app mobile com:
+
+- Início
+
+- Publicar
+
+- Ofertas
+
+- Ranking
+
+- Perfil
+
+2. Tela inicial
+
+Criar uma home mais forte com:
+
+- Destaque “Economize encontrando o menor preço perto de você”
+
+- Card com total de ofertas cadastradas
+
+- Card com menor preço encontrado
+
+- Card com usuário líder do ranking
+
+- Botão principal “Ver ofertas próximas”
+
+- Botão secundário “Publicar uma oferta”
+
+3. Publicação mais completa
+
+No formulário de oferta adicionar:
+
+- Produto
+
+- Categoria
+
+- Marca
+
+- Preço
+
+- Mercado
+
+- Bairro
+
+- Cidade
+
+- Foto da oferta por URL
+
+- Data de validade da oferta
+
+- Localização automática
+
+Categorias:
+
+- Alimentos
+
+- Bebidas
+
+- Limpeza
+
+- Higiene
+
+- Carnes
+
+- Hortifruti
+
+- Bebê
+
+- Pet
+
+- Outros
+
+4. Cards de oferta mais profissionais
+
+Cada card deve mostrar:
+
+- Imagem do produto se houver
+
+- Produto
+
+- Categoria
+
+- Marca
+
+- Preço em destaque grande
+
+- Mercado
+
+- Bairro e cidade
+
+- Distância
+
+- Validade
+
+- Status da oferta:
+
+  - Nova
+
+  - Validada
+
+  - Expirada
+
+- Curtidas e validações
+
+- Botões:
+
+  - Curtir
+
+  - Validar
+
+  - Denunciar preço errado
+
+5. Sistema de denúncia
+
+Criar botão “Denunciar preço errado”.
+
+Ao clicar:
+
+- aumentar contador de denúncias
+
+- se tiver 3 denúncias, marcar oferta como “suspeita”
+
+- se passar da validade, marcar como “expirada”
+
+6. Filtros avançados
+
+Na tela de ofertas criar filtros:
+
+- buscar produto
+
+- categoria
+
+- raio
+
+- ordenar por:
+
+  - menor preço
+
+  - mais próximo
+
+  - mais validado
+
+  - mais recente
+
+7. Perfil do usuário
+
+Criar tela de perfil simples com:
+
+- Nome: Usuário Demo
+
+- Pontos
+
+- Quantidade de ofertas publicadas
+
+- Quantidade de validações recebidas
+
+- Nível do usuário:
+
+  - Bronze: 0 a 99 pontos
+
+  - Prata: 100 a 299 pontos
+
+  - Ouro: 300 a 999 pontos
+
+  - Diamante: 1000+
+
+8. Ranking melhorado
+
+Mostrar ranking com:
+
+- posição
+
+- nome
+
+- pontos
+
+- nível
+
+- medalha para os 3 primeiros
+
+9. Backend
+
+Atualizar rotas para suportar:
+
+- categoria
+
+- marca
+
+- bairro
+
+- cidade
+
+- fotoUrl
+
+- validade
+
+- denúncias
+
+- status
+
+- filtros avançados
+
+- perfil do usuário
+
+- estatísticas da home
+
+Criar novas rotas:
+
+GET /stats
+
+Retorna:
+
+- total de ofertas
+
+- menor preço
+
+- líder do ranking
+
+GET /perfil/:id
+
+Retorna:
+
+- dados do usuário
+
+- pontos
+
+- nível
+
+- total de ofertas publicadas
+
+- total de validações recebidas
+
+POST /ofertas/:id/denunciar
+
+- aumenta denúncias
+
+- se denúncias >= 3, status vira “suspeita”
+
+10. Design
+
+Quero visual de aplicativo real:
+
+- mobile first
+
+- menu fixo inferior
+
+- cards modernos
+
+- botões grandes
+
+- preço em destaque
+
+- cores verdes, branco e cinza claro
+
+- detalhes em amarelo para ranking
+
+- alerta vermelho para oferta suspeita/expirada
+
+11. Importante
+
+Manter tudo funcionando no Replit.
+
+Não usar banco externo ainda.
+
+Não usar login real ainda.
+
+Não quebrar funcionalidades anteriores.
+
+Manter Node.js + Express + HTML + CSS + JavaScript puro.
+
+ENTREGA:
+
+Atualize todos os arquivos necessários:
+
+- index.js
+
+- db.json
+
+- public/index.html
+
+- public/app.js
+
+- public/style.css
+
+O app deve ficar com cara de produto real para teste com usuários.

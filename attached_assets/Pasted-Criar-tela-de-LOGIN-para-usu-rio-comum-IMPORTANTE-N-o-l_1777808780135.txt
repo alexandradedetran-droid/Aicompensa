@@ -1,0 +1,203 @@
+Criar tela de LOGIN para usuário comum.
+
+IMPORTANTE:
+
+- Não é login admin.
+
+- É login/cadastro do usuário do app.
+
+- Manter HTML, CSS e JavaScript puro.
+
+- Não usar React.
+
+OBJETIVO:
+
+Permitir que o usuário entre no app usando os dados cadastrados.
+
+TELAS:
+
+1. /login
+
+Criar tela bonita e mobile-first com:
+
+- Logo/nome do app
+
+- Título: “Entrar na sua conta”
+
+- Campo CPF
+
+- Campo telefone
+
+- Botão “Entrar”
+
+- Link/botão: “Ainda não tenho conta”
+
+2. /cadastro
+
+Manter tela de cadastro com:
+
+- Nome completo
+
+- Telefone
+
+- CPF
+
+- Cidade
+
+- Estado
+
+3. FLUXO
+
+Se o usuário não estiver logado:
+
+- redirecionar para /login
+
+Na tela /login:
+
+- usuário informa CPF e telefone
+
+- validar se existe usuário no db.json com o mesmo CPF e telefone
+
+- se existir:
+
+  - salvar no localStorage:
+
+    usuarioLogado = true
+
+    usuarioId
+
+    usuarioNome
+
+  - redirecionar para Home
+
+- se não existir:
+
+  - mostrar erro:
+
+    “Usuário não encontrado. Faça seu cadastro.”
+
+4. BOTÃO “AINDA NÃO TENHO CONTA”
+
+Ao clicar:
+
+- redirecionar para /cadastro
+
+5. LOGOUT
+
+No Perfil adicionar botão:
+
+“Sair da conta”
+
+Ao clicar:
+
+- remover usuarioLogado
+
+- remover usuarioId
+
+- remover usuarioNome
+
+- redirecionar para /login
+
+6. BACKEND
+
+Criar rota:
+
+POST /usuarios/login
+
+Receber:
+
+- cpf
+
+- telefone
+
+Validar:
+
+- remover máscara antes de comparar
+
+- procurar usuário no db.json
+
+Se encontrar:
+
+retornar:
+
+{
+
+  "success": true,
+
+  "usuario": {
+
+    "id": "...",
+
+    "nome": "...",
+
+    "cidade": "...",
+
+    "estado": "...",
+
+    "pontos": 0
+
+  }
+
+}
+
+Se não encontrar:
+
+retornar 401:
+
+{
+
+  "success": false,
+
+  "message": "Usuário não encontrado."
+
+}
+
+7. CADASTRO
+
+Garantir que /usuarios/cadastro:
+
+- salve usuário no db.json
+
+- não permita CPF duplicado
+
+- não permita telefone duplicado
+
+- salve cpf e telefone sem máscara ou com máscara padronizada
+
+- inicialize pontos como 0
+
+- bloqueado como false
+
+8. PROTEÇÃO
+
+No app principal:
+
+- só permitir publicar oferta se usuário estiver logado
+
+- salvar oferta com usuarioId e usuarioNome do usuário logado
+
+9. VISUAL LOGIN
+
+Fazer tela premium:
+
+- fundo escuro
+
+- card central
+
+- inputs arredondados
+
+- botão verde grande
+
+- texto branco
+
+- link verde para cadastro
+
+10. IMPORTANTE
+
+- Admin continua separado em /admin-login
+
+- Usuário comum usa /login
+
+- Não misturar login admin com login usuário
+
+- Não quebrar publicação de oferta, ranking, perfil e admin

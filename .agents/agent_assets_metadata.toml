@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "jgSQyp_40EmbWoL_NjSRb"
+uri = "file://comparador-precos.tar.gz"
+type = "unspecified"
+title = "Comparador de Preços — Projeto Completo"

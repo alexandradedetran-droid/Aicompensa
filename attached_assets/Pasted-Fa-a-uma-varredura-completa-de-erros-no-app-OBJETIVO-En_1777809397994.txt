@@ -1,0 +1,189 @@
+Faça uma varredura completa de erros no app.
+
+OBJETIVO:
+
+Encontrar e corrigir bugs sem mudar o design e sem quebrar funcionalidades.
+
+VERIFICAR:
+
+1. Login de usuário
+
+- /login funcionando
+
+- /cadastro funcionando
+
+- CPF e telefone com máscara
+
+- login não aceita usuário inexistente
+
+- CPF duplicado bloqueado
+
+- telefone duplicado bloqueado
+
+- logout funcionando
+
+2. Proteção de rotas
+
+- usuário sem login não acessa app principal
+
+- admin sem login não acessa /admin
+
+- admin e usuário comum não se misturam
+
+3. Publicação de oferta
+
+- não publicar sem foto
+
+- não publicar sem produto
+
+- não publicar sem categoria
+
+- não publicar sem preço
+
+- não publicar sem mercado
+
+- não publicar sem cidade/estado/bairro
+
+- validade pode ficar vazia
+
+- foto via câmera funcionando no celular
+
+- preview da foto funcionando
+
+- salvar usuário que publicou
+
+4. Ofertas
+
+- listar ofertas
+
+- buscar produto
+
+- filtrar categoria
+
+- ordenar corretamente
+
+- curtir funcionando
+
+- validar funcionando
+
+- denunciar funcionando
+
+- status Novo/Validado/Suspeito/Expirado funcionando
+
+5. Ranking e perfil
+
+- pontos somando corretamente
+
+- perfil mostra dados certos
+
+- CPF mascarado no perfil
+
+- ranking ordenado por pontos
+
+- nível Bronze/Prata/Ouro/Diamante correto
+
+6. Admin
+
+- login admin funcionando
+
+- token admin enviado nas rotas
+
+- excluir oferta funcionando
+
+- destacar oferta funcionando
+
+- patrocinar oferta funcionando
+
+- resetar denúncias funcionando
+
+- estatísticas funcionando
+
+7. Backend
+
+- verificar todas as rotas:
+
+GET /ofertas
+
+POST /ofertas
+
+POST /ofertas/:id/like
+
+POST /ofertas/:id/validar
+
+POST /ofertas/:id/denunciar
+
+GET /ranking
+
+GET /stats
+
+GET /perfil/:id
+
+POST /usuarios/login
+
+POST /usuarios/cadastro
+
+GET /admin/stats
+
+GET /admin/ofertas
+
+GET /admin/usuarios
+
+8. Erros de JavaScript
+
+- abrir console e corrigir erros
+
+- remover funções duplicadas
+
+- remover variáveis não definidas
+
+- corrigir botões sem função
+
+- corrigir IDs que não existem no HTML
+
+9. Banco db.json
+
+- garantir estrutura válida
+
+- garantir que usuarios e ofertas existam
+
+- criar automaticamente se db.json não existir
+
+- evitar quebrar se campo antigo estiver faltando
+
+10. Mobile
+
+- testar layout no celular
+
+- menu inferior não pode cobrir botões
+
+- formulário deve caber na tela
+
+- câmera deve abrir corretamente
+
+IMPORTANTE:
+
+- NÃO usar React
+
+- NÃO usar Vite
+
+- NÃO usar shadcn
+
+- NÃO mudar o layout sem necessidade
+
+- Corrigir apenas bugs e inconsistências
+
+- Manter HTML, CSS e JavaScript puro
+
+- Manter Node.js + Express
+
+ENTREGA:
+
+Depois da varredura, me dê um relatório com:
+
+1. erros encontrados
+
+2. arquivos alterados
+
+3. correções feitas
+
+4. testes realizados

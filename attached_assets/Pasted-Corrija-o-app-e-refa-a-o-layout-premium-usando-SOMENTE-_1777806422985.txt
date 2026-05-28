@@ -1,0 +1,163 @@
+Corrija o app e refaça o layout premium usando SOMENTE HTML, CSS e JavaScript puro.
+
+IMPORTANTE:
+
+- NÃO usar React
+
+- NÃO usar Vite
+
+- NÃO usar shadcn/ui
+
+- NÃO usar useFormField
+
+- NÃO usar FormField
+
+- NÃO usar hooks
+
+- Remover qualquer código React existente
+
+- Manter Node.js + Express no backend
+
+Quero um layout premium mobile-first com:
+
+1. Fundo escuro elegante
+
+- #07111f ou #0f172a
+
+- aparência de app moderno
+
+2. Header pequeno
+
+- “Bom dia 👋”
+
+- “Ofertas perto de você”
+
+- botão de localização discreto
+
+3. Card principal premium
+
+- gradiente verde
+
+- título: “Melhor oferta agora”
+
+- produto em destaque
+
+- preço grande: “R$ 2,49”
+
+- mercado e bairro
+
+- botão “Ver ofertas”
+
+4. Cards de estatísticas
+
+- Ofertas ativas
+
+- Menor preço
+
+- Líder do ranking
+
+- cards pequenos com efeito glass
+
+5. Seção de ofertas
+
+- título “Ofertas em destaque”
+
+- cards brancos arredondados
+
+- imagem do produto
+
+- produto
+
+- mercado
+
+- distância
+
+- preço grande verde
+
+- badges: Novo, Validado, Suspeito
+
+- botões Curtir e Validar
+
+6. Tela de ofertas estilo iFood
+
+- busca fixa no topo
+
+- chips horizontais de categoria
+
+- cards compactos e bonitos
+
+- preço como protagonista
+
+7. Menu inferior premium
+
+- fundo escuro
+
+- ícones claros
+
+- ativo verde
+
+- botão central + com glow verde
+
+8. Publicar oferta
+
+- formulário bonito
+
+- inputs escuros com borda suave
+
+- botão grande verde
+
+- campos: produto, categoria, marca, preço, mercado, bairro, cidade, fotoUrl, validade
+
+9. Ranking
+
+- card dourado para o líder
+
+- medalhas para top 3
+
+- pontos e nível
+
+10. Perfil
+
+- card com avatar circular
+
+- pontos
+
+- nível
+
+- ofertas publicadas
+
+- validações recebidas
+
+Preservar todas as funcionalidades:
+
+- publicar oferta
+
+- listar ofertas
+
+- buscar
+
+- filtrar por categoria
+
+- curtir
+
+- validar
+
+- denunciar
+
+- ranking
+
+- perfil
+
+- stats
+
+Atualize somente:
+
+- public/index.html
+
+- public/app.js
+
+- public/style.css
+
+- index.js apenas se for necessário para corrigir rotas quebradas
+
+O resultado deve parecer app premium de startup, não template genérico.

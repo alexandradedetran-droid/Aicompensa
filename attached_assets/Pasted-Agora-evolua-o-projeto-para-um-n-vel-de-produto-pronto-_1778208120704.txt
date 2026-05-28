@@ -1,0 +1,497 @@
+Agora evolua o projeto para um nível de produto pronto para lançamento público e crescimento acelerado.
+
+IMPORTANTE:
+
+- NÃO quebrar funcionalidades existentes.
+
+- NÃO remover recursos atuais.
+
+- Preservar toda lógica implementada anteriormente.
+
+- Manter compatibilidade mobile-first.
+
+- Manter React + TypeScript + Express + PostgreSQL + Drizzle ORM.
+
+- Corrigir todos os erros ao final.
+
+- Revisar arquitetura antes de implementar qualquer mudança.
+
+OBJETIVO:
+
+Transformar o sistema em um produto extremamente refinado, confiável, rápido e com aparência de aplicativo grande de mercado.
+
+==================================================
+
+FASE 1 — EXPERIÊNCIA PREMIUM TOTAL
+
+==================================================
+
+1. Refinar TODA a experiência visual
+
+Quero aparência:
+
+- premium
+
+- moderna
+
+- limpa
+
+- tecnológica
+
+- fluida
+
+- profissional
+
+Eliminar aparência:
+
+- genérica
+
+- template Tailwind comum
+
+- visual poluído
+
+- excesso de cores
+
+2. Melhorar design system completo
+
+Padronizar:
+
+- cores
+
+- sombras
+
+- espaçamentos
+
+- tipografia
+
+- inputs
+
+- botões
+
+- badges
+
+- modais
+
+- animações
+
+3. Criar identidade visual própria
+
+Objetivo:
+
+o app precisa parecer único.
+
+Melhorar:
+
+- personalidade visual
+
+- estilo dos cards
+
+- hierarquia de informações
+
+- experiência emocional
+
+4. Criar microinterações profissionais
+
+Adicionar:
+
+- feedback ao toque
+
+- animações suaves
+
+- transições elegantes
+
+- loaders refinados
+
+- skeletons premium
+
+==================================================
+
+FASE 2 — EXPERIÊNCIA MOBILE NÍVEL APP GRANDE
+
+==================================================
+
+5. Refinar navegação mobile
+
+Criar:
+
+- bottom navigation premium
+
+- navegação extremamente fluida
+
+- áreas de toque corretas
+
+- excelente uso de espaço
+
+6. Melhorar experiência de scroll
+
+- scroll suave
+
+- carregamento progressivo
+
+- sensação de fluidez
+
+7. Melhorar UX dos cards
+
+Cards devem parecer:
+
+- mais vivos
+
+- mais modernos
+
+- mais escaneáveis
+
+Preço deve ser prioridade visual máxima.
+
+==================================================
+
+FASE 3 — CONFIANÇA E CREDIBILIDADE
+
+==================================================
+
+8. Melhorar sistema de confiança
+
+Criar:
+
+- score de confiabilidade
+
+- selo premium
+
+- reputação do usuário
+
+- histórico confiável
+
+9. Destacar ofertas verificadas
+
+Mostrar:
+
+- confirmado hoje
+
+- confirmado por múltiplos usuários
+
+- mercado confiável
+
+10. Criar sistema visual anti-spam
+
+Ofertas suspeitas:
+
+- perdem destaque
+
+- ficam discretas
+
+- podem ser ocultadas
+
+==================================================
+
+FASE 4 — RETENÇÃO EXTREMA
+
+==================================================
+
+11. Melhorar home para retenção diária
+
+Adicionar:
+
+- tendência na sua região
+
+- maior economia hoje
+
+- preços atualizados recentemente
+
+- produtos em queda
+
+- alertas inteligentes
+
+12. Criar sensação de urgência
+
+Exemplo:
+
+- “acabando”
+
+- “muito validada hoje”
+
+- “preço caiu agora”
+
+13. Melhorar sistema de notificações
+
+Criar experiência elegante:
+
+- notificações organizadas
+
+- prioridades
+
+- filtros
+
+- histórico
+
+==================================================
+
+FASE 5 — SEO E CRESCIMENTO ORGÂNICO
+
+==================================================
+
+14. Criar páginas individuais de produtos
+
+Exemplo:
+
+/ produto / coca-cola-2l
+
+Cada página deve ter:
+
+- SEO completo
+
+- ofertas
+
+- histórico
+
+- comparação
+
+- mercados próximos
+
+15. Melhorar meta tags dinâmicas
+
+Adicionar:
+
+- Open Graph
+
+- Twitter cards
+
+- preview bonito ao compartilhar
+
+16. Melhorar indexação Google
+
+Adicionar:
+
+- sitemap
+
+- robots
+
+- schema.org
+
+- canonical URLs
+
+==================================================
+
+FASE 6 — PERFORMANCE NÍVEL PRODUÇÃO
+
+==================================================
+
+17. Melhorar performance geral
+
+Aplicar:
+
+- memoização
+
+- lazy loading
+
+- cache estratégico
+
+- code splitting
+
+- otimização de queries
+
+18. Melhorar carregamento mobile
+
+Objetivo:
+
+abrir extremamente rápido.
+
+19. Otimizar imagens
+
+- lazy image
+
+- compressão
+
+- placeholders
+
+==================================================
+
+FASE 7 — DASHBOARD ADMIN AVANÇADO
+
+==================================================
+
+20. Evoluir painel admin
+
+Adicionar:
+
+- métricas em tempo real
+
+- usuários online
+
+- retenção
+
+- crescimento
+
+- ofertas por região
+
+- denúncias
+
+- tendências
+
+21. Criar moderação inteligente
+
+Admin pode:
+
+- ocultar spam
+
+- destacar ofertas
+
+- priorizar regiões
+
+- bloquear usuários abusivos
+
+22. Criar analytics visuais
+
+Com gráficos modernos:
+
+- crescimento
+
+- engajamento
+
+- produtos populares
+
+- mercados mais ativos
+
+==================================================
+
+FASE 8 — MONETIZAÇÃO PROFISSIONAL
+
+==================================================
+
+23. Preparar patrocinados premium
+
+Criar:
+
+- cards patrocinados elegantes
+
+- destaque sem poluição
+
+- analytics para parceiros
+
+24. Criar estrutura futura para assinatura
+
+Preparar:
+
+- usuários premium
+
+- alertas avançados
+
+- histórico completo
+
+- comparações avançadas
+
+25. Criar estrutura para mercados parceiros
+
+Mercados poderão:
+
+- destacar ofertas
+
+- responder usuários
+
+- acessar analytics
+
+==================================================
+
+FASE 9 — QUALIDADE E SEGURANÇA
+
+==================================================
+
+26. Revisar segurança geral
+
+Adicionar:
+
+- rate limiting
+
+- sanitização
+
+- validações fortes
+
+- proteção contra spam
+
+- proteção contra abuso
+
+27. Melhorar tratamento de erros
+
+Criar:
+
+- fallback elegante
+
+- mensagens amigáveis
+
+- logs organizados
+
+28. Revisar TypeScript completamente
+
+Eliminar:
+
+- any desnecessário
+
+- tipagens frágeis
+
+- warnings importantes
+
+==================================================
+
+FASE 10 — FINALIZAÇÃO ABSOLUTA
+
+==================================================
+
+29. Rodar:
+
+- TypeScript check
+
+- frontend build
+
+- backend build
+
+30. Corrigir:
+
+- erros
+
+- warnings
+
+- imports quebrados
+
+- responsividade
+
+- sobreposição de texto
+
+31. Garantir:
+
+- experiência extremamente premium
+
+- fluidez total
+
+- aparência de produto grande
+
+- excelente experiência mobile
+
+- nenhuma tela quebrada
+
+32. Fazer revisão completa visual e técnica
+
+Garantir:
+
+- consistência
+
+- refinamento
+
+- qualidade de produção
+
+33. Ao finalizar:
+
+Gerar relatório detalhado contendo:
+
+- melhorias implementadas
+
+- arquivos alterados
+
+- melhorias de UX
+
+- melhorias de performance
+
+- melhorias de arquitetura
+
+- melhorias de monetização
+
+- próximos passos estratégicos
+
+- recomendações para lançamento público

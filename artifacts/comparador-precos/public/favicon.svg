@@ -1,0 +1,10 @@
+<svg width="180" height="180" viewBox="0 0 180 180" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="180" height="180" rx="40" fill="#059669"/>
+  <!-- Cart handle -->
+  <path d="M32 45H56L74 116H142" stroke="white" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Cart body -->
+  <path d="M56 45L70 100H142L154 58H62" stroke="white" stroke-width="11" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Wheels -->
+  <circle cx="84" cy="132" r="11" fill="white"/>
+  <circle cx="130" cy="132" r="11" fill="white"/>
+</svg>

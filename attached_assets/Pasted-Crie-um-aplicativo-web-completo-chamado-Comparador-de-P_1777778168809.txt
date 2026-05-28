@@ -1,0 +1,261 @@
+Crie um aplicativo web completo chamado “Comparador de Preços”, estilo “Waze dos preços de supermercado”.
+
+OBJETIVO:
+
+Permitir que usuários publiquem ofertas de produtos em mercados próximos, comparem preços por localização, validem ofertas reais e ganhem pontos no ranking.
+
+TECNOLOGIA:
+
+- Node.js
+
+- Express
+
+- HTML, CSS e JavaScript puro
+
+- Banco inicial em JSON local chamado db.json
+
+- Projeto simples, funcional e pronto para rodar no Replit
+
+FUNCIONALIDADES PRINCIPAIS:
+
+1. Tela inicial
+
+- Layout moderno, responsivo e limpo
+
+- Título: “Comparador de Preços”
+
+- Subtítulo: “Encontre os menores preços perto de você”
+
+- Cards para adicionar oferta, buscar ofertas, ranking e lista de ofertas
+
+2. Publicar oferta
+
+Criar formulário com:
+
+- Nome do produto
+
+- Preço
+
+- Nome do mercado
+
+- Botão “Usar minha localização”
+
+- Botão “Publicar oferta”
+
+Ao publicar:
+
+- Validar campos obrigatórios
+
+- Salvar produto, preço, mercado, latitude, longitude, data de criação, curtidas, validações e usuário
+
+- Dar 10 pontos ao usuário que publicou
+
+3. Geolocalização
+
+- Usar navigator.geolocation
+
+- Capturar latitude e longitude do usuário
+
+- Mostrar mensagem quando a localização for capturada
+
+- Permitir buscar ofertas por distância
+
+4. Buscar ofertas
+
+Criar campo de busca por produto e filtro de raio:
+
+- até 2 km
+
+- até 5 km
+
+- até 10 km
+
+- até 20 km
+
+A lista deve:
+
+- Ordenar pelo menor preço
+
+- Mostrar distância quando houver localização
+
+- Filtrar ofertas dentro do raio selecionado
+
+- Permitir busca por nome do produto
+
+5. Cards de oferta
+
+Cada oferta deve mostrar:
+
+- Nome do produto
+
+- Preço formatado em reais
+
+- Mercado
+
+- Distância aproximada
+
+- Quantidade de curtidas
+
+- Quantidade de validações
+
+- Botão “Curtir”
+
+- Botão “Validar oferta”
+
+6. Validação social
+
+- Botão Curtir aumenta likes
+
+- Botão Validar aumenta validações
+
+- Cada validação dá +2 pontos ao usuário que publicou a oferta
+
+7. Ranking
+
+Criar ranking de usuários:
+
+- Nome do usuário
+
+- Pontuação
+
+- Ordenado do maior para o menor
+
+- Usuário demo inicial
+
+8. Backend
+
+Criar API com as rotas:
+
+GET /ofertas
+
+- Lista ofertas
+
+- Permite filtro por produto
+
+- Permite filtro por latitude, longitude e raio
+
+- Calcula distância usando fórmula Haversine
+
+- Ordena por menor preço
+
+POST /ofertas
+
+- Cria uma nova oferta
+
+- Valida campos obrigatórios
+
+- Salva no db.json
+
+- Soma pontos ao usuário
+
+POST /ofertas/:id/like
+
+- Aumenta curtidas da oferta
+
+POST /ofertas/:id/validar
+
+- Aumenta validações da oferta
+
+- Soma pontos ao usuário criador
+
+GET /ranking
+
+- Retorna usuários ordenados por pontos
+
+9. Banco db.json
+
+Criar estrutura inicial:
+
+{
+
+  "ofertas": [],
+
+  "usuarios": [
+
+    {
+
+      "id": 1,
+
+      "nome": "Usuário Demo",
+
+      "pontos": 0
+
+    }
+
+  ]
+
+}
+
+10. Design
+
+Usar visual moderno:
+
+- Fundo cinza claro
+
+- Cards brancos arredondados
+
+- Botões verdes
+
+- Boa usabilidade no celular
+
+- Responsivo para mobile
+
+- Espaçamentos confortáveis
+
+- Hierarquia visual clara
+
+11. Requisitos técnicos
+
+- Criar package.json com express
+
+- Servir arquivos estáticos da pasta public
+
+- Usar porta 3000
+
+- Garantir que o app rode ao clicar em Run no Replit
+
+- Criar automaticamente db.json caso não exista
+
+- Não usar banco externo ainda
+
+- Não usar login real ainda
+
+- Não usar frameworks pesados
+
+12. Entrega esperada
+
+Crie todos os arquivos necessários:
+
+- package.json
+
+- index.js
+
+- db.json
+
+- public/index.html
+
+- public/app.js
+
+- public/style.css
+
+Ao final, o app deve permitir:
+
+- Capturar localização
+
+- Publicar oferta
+
+- Listar ofertas
+
+- Buscar por produto
+
+- Filtrar por distância
+
+- Curtir oferta
+
+- Validar oferta
+
+- Ver ranking de pontos
+
+IMPORTANTE:
+
+Quero um MVP funcional, simples, bonito e pronto para testar com usuários reais.

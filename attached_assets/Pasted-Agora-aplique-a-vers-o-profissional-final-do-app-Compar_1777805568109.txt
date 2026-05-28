@@ -1,0 +1,341 @@
+Agora aplique a versão profissional final do app Comparador de Preços.
+
+Quero que você melhore o app inteiro mantendo Node.js + Express + HTML + CSS + JavaScript puro.
+
+OBJETIVO:
+
+Deixar o app com aparência real de aplicativo mobile estilo iFood/Uber Eats, com foco em encontrar ofertas próximas e publicar preços rapidamente.
+
+MELHORIAS GERAIS:
+
+1. Corrigir a HOME
+
+- Reduzir o banner verde para ocupar menos espaço.
+
+- Trocar o texto grande por:
+
+  “Economize no mercado perto de você”
+
+- Subtítulo:
+
+  “Veja ofertas reais, valide preços e ganhe pontos.”
+
+- Mostrar cards de estatísticas logo abaixo:
+
+  - ofertas ativas
+
+  - menor preço
+
+  - líder do ranking
+
+- Criar seção:
+
+  “🔥 Oferta mais barata agora”
+
+  mostrando produto, preço, mercado e distância.
+
+- Botão principal:
+
+  “🔥 Ver ofertas perto de mim”
+
+- Botão secundário:
+
+  “💰 Ganhar pontos publicando oferta”
+
+2. Criar tela de OFERTAS estilo iFood
+
+- Topo fixo com busca.
+
+- Botão de localização.
+
+- Chips horizontais:
+
+  Todos, Alimentos, Bebidas, Limpeza, Higiene, Carnes, Hortifruti, Bebê, Pet, Outros.
+
+- Cards de oferta com:
+
+  - imagem
+
+  - produto
+
+  - mercado
+
+  - bairro/cidade
+
+  - distância
+
+  - categoria
+
+  - preço em destaque grande
+
+  - validade
+
+  - status
+
+  - curtidas
+
+  - validações
+
+  - botão curtir
+
+  - botão validar
+
+  - botão denunciar preço errado
+
+3. Filtros e ordenação
+
+Adicionar filtros:
+
+- buscar produto
+
+- categoria
+
+- raio
+
+- ordenar por:
+
+  - menor preço
+
+  - mais próximo
+
+  - mais validado
+
+  - mais recente
+
+4. Publicar oferta
+
+Melhorar tela de publicação com campos:
+
+- produto
+
+- categoria
+
+- marca
+
+- preço
+
+- mercado
+
+- bairro
+
+- cidade
+
+- URL da foto
+
+- validade da oferta
+
+- botão usar localização
+
+- botão publicar
+
+Ao publicar:
+
+- salvar todos os dados
+
+- salvar localização
+
+- dar 10 pontos ao usuário
+
+5. Status da oferta
+
+Implementar status visual:
+
+- Novo: oferta criada há menos de 1 hora
+
+- Validado: mais de 3 validações
+
+- Suspeito: 3 ou mais denúncias
+
+- Expirado: validade vencida
+
+6. Denúncia
+
+Criar rota:
+
+POST /ofertas/:id/denunciar
+
+Ao denunciar:
+
+- aumentar contador de denúncias
+
+- se denúncias >= 3, status deve aparecer como suspeito
+
+7. Ranking
+
+Melhorar ranking:
+
+- medalha para top 3
+
+- nome
+
+- pontos
+
+- nível:
+
+  Bronze: 0 a 99
+
+  Prata: 100 a 299
+
+  Ouro: 300 a 999
+
+  Diamante: 1000+
+
+8. Perfil
+
+Criar tela Perfil com:
+
+- nome do usuário
+
+- pontos
+
+- nível
+
+- total de ofertas publicadas
+
+- validações recebidas
+
+- botão fictício “Editar perfil”
+
+9. Backend
+
+Atualizar index.js com rotas:
+
+GET /ofertas
+
+POST /ofertas
+
+POST /ofertas/:id/like
+
+POST /ofertas/:id/validar
+
+POST /ofertas/:id/denunciar
+
+GET /ranking
+
+GET /stats
+
+GET /perfil/:id
+
+A rota GET /ofertas deve aceitar:
+
+- produto
+
+- categoria
+
+- lat
+
+- lng
+
+- raio
+
+- ordenar
+
+Usar fórmula Haversine para distância.
+
+10. Banco
+
+Atualizar db.json mantendo:
+
+- ofertas
+
+- usuarios
+
+Usuário inicial:
+
+Ana Oliveira, 120 pontos
+
+Criar algumas ofertas demo para aparecer na tela inicial e na tela de ofertas, com:
+
+- produto
+
+- categoria
+
+- marca
+
+- preço
+
+- mercado
+
+- bairro
+
+- cidade
+
+- fotoUrl
+
+- validade
+
+- lat/lng
+
+- curtidas
+
+- validações
+
+- denúncias
+
+11. Design
+
+Mobile first.
+
+Menu inferior fixo com:
+
+- Home
+
+- Ofertas
+
+- botão central +
+
+- Ranking
+
+- Perfil
+
+Visual:
+
+- verde como cor principal
+
+- branco
+
+- cinza claro
+
+- preço em destaque
+
+- cards arredondados
+
+- sombra leve
+
+- botão grande
+
+- evitar excesso de texto
+
+- mostrar conteúdo útil sem muita rolagem
+
+12. Importante
+
+Não quebrar o app.
+
+Não usar React.
+
+Não usar banco externo.
+
+Não usar Supabase ainda.
+
+Manter tudo rodando no Replit.
+
+Criar/atualizar todos os arquivos necessários.
+
+ENTREGA:
+
+Atualize:
+
+- package.json
+
+- index.js
+
+- db.json
+
+- public/index.html
+
+- public/app.js
+
+- public/style.css
+
+Ao final, quero o app funcionando completo no navegador e no celular.

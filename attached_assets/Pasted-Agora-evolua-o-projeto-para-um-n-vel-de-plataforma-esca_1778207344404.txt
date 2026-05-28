@@ -1,0 +1,503 @@
+Agora evolua o projeto para um nível de plataforma escalável, inteligente e preparada para crescimento real.
+
+IMPORTANTE:
+
+- NÃO quebrar funcionalidades existentes.
+
+- NÃO remover recursos atuais.
+
+- Preservar toda lógica atual.
+
+- Manter compatibilidade mobile-first.
+
+- Manter React + TypeScript + Express + PostgreSQL + Drizzle ORM.
+
+- Corrigir todos os erros ao final.
+
+- Revisar arquitetura antes de implementar.
+
+OBJETIVO:
+
+Transformar o sistema em uma plataforma altamente profissional, rápida, inteligente e pronta para expansão regional/nacional.
+
+==================================================
+
+FASE 1 — ARQUITETURA E ESCALABILIDADE
+
+==================================================
+
+1. Revisar estrutura do projeto
+
+Melhorar organização:
+
+- components
+
+- hooks
+
+- services
+
+- utils
+
+- pages
+
+- features
+
+- api
+
+- schemas
+
+- validations
+
+2. Criar arquitetura modular
+
+Separar:
+
+- ofertas
+
+- produtos
+
+- usuários
+
+- notificações
+
+- ranking
+
+- geolocalização
+
+- gamificação
+
+- admin
+
+3. Melhorar tipagem TypeScript
+
+Eliminar:
+
+- any desnecessário
+
+- tipagens frágeis
+
+- retornos inseguros
+
+4. Melhorar tratamento de erros
+
+Criar:
+
+- error boundaries
+
+- mensagens amigáveis
+
+- fallback UI
+
+- logs organizados
+
+==================================================
+
+FASE 2 — PERFORMANCE PROFISSIONAL
+
+==================================================
+
+5. Melhorar performance frontend
+
+Aplicar:
+
+- memoização
+
+- lazy loading
+
+- code splitting
+
+- suspense
+
+- virtualização onde necessário
+
+6. Melhorar performance backend
+
+Otimizar:
+
+- queries Drizzle
+
+- índices SQL
+
+- paginação
+
+- joins
+
+- cache simples quando fizer sentido
+
+7. Criar cache estratégico
+
+Para:
+
+- melhores promoções
+
+- produtos populares
+
+- ranking
+
+- home feed
+
+8. Melhorar carregamento mobile
+
+- reduzir renderizações
+
+- otimizar imagens
+
+- evitar requests desnecessários
+
+==================================================
+
+FASE 3 — PWA E EXPERIÊNCIA APP
+
+==================================================
+
+9. Transformar em PWA
+
+Adicionar:
+
+- install prompt
+
+- manifest
+
+- ícones
+
+- splash screen
+
+- funcionamento semelhante a app
+
+10. Criar suporte offline básico
+
+Permitir visualizar:
+
+- últimas promoções carregadas
+
+- favoritos
+
+- perfil básico
+
+11. Melhorar experiência mobile
+
+- navegação fluida
+
+- bottom navigation premium
+
+- gestos suaves
+
+- animações leves
+
+==================================================
+
+FASE 4 — IA E INTELIGÊNCIA
+
+==================================================
+
+12. Criar sistema inteligente de detecção de produtos
+
+Melhorar agrupamento automático.
+
+Exemplo:
+
+- coca cola 2l
+
+- coca 2 litros
+
+- coca-cola original 2l
+
+Devem pertencer ao mesmo produto.
+
+13. Criar score inteligente de qualidade da oferta
+
+Considerar:
+
+- preço
+
+- distância
+
+- validade
+
+- validações
+
+- confiança do usuário
+
+- comportamento histórico
+
+14. Criar detecção automática de ofertas suspeitas
+
+Detectar:
+
+- preço irreal
+
+- spam
+
+- duplicidade excessiva
+
+- comportamento malicioso
+
+15. Criar sugestões automáticas
+
+Exemplo:
+
+“Usuários que acompanham arroz também acompanham óleo”
+
+==================================================
+
+FASE 5 — DASHBOARD ADMIN PROFISSIONAL
+
+==================================================
+
+16. Evoluir painel admin
+
+Adicionar:
+
+- métricas em tempo real
+
+- usuários ativos
+
+- ofertas por região
+
+- denúncias
+
+- produtos populares
+
+- crescimento diário
+
+17. Criar gráficos profissionais
+
+Mostrar:
+
+- crescimento
+
+- retenção
+
+- engajamento
+
+- ofertas por categoria
+
+- mercados mais ativos
+
+18. Criar moderação inteligente
+
+Permitir:
+
+- ocultar automaticamente
+
+- destacar automaticamente
+
+- bloquear spam
+
+==================================================
+
+FASE 6 — MARKETPLACE E MONETIZAÇÃO
+
+==================================================
+
+19. Preparar sistema para mercados parceiros
+
+Mercados podem:
+
+- criar perfil
+
+- responder ofertas
+
+- destacar promoções
+
+20. Criar estrutura premium
+
+Preparar:
+
+- assinatura
+
+- destaque patrocinado
+
+- analytics premium
+
+21. Criar sistema elegante de patrocinados
+
+Sem poluir feed.
+
+==================================================
+
+FASE 7 — SEO E CRESCIMENTO
+
+==================================================
+
+22. Melhorar SEO
+
+Adicionar:
+
+- meta tags dinâmicas
+
+- Open Graph
+
+- sitemap
+
+- URLs amigáveis
+
+- schema.org
+
+23. Melhorar indexação Google
+
+Cada produto deve ter:
+
+- página própria
+
+- URL própria
+
+- SEO otimizado
+
+Exemplo:
+
+/produto/coca-cola-2l
+
+24. Melhorar compartilhamento social
+
+Criar preview bonito:
+
+- imagem
+
+- preço
+
+- mercado
+
+- economia
+
+==================================================
+
+FASE 8 — EXPERIÊNCIA VISUAL PREMIUM
+
+==================================================
+
+25. Refinar identidade visual
+
+Objetivo:
+
+- parecer startup grande
+
+- visual único
+
+- menos template
+
+- mais premium
+
+Melhorar:
+
+- tipografia
+
+- animações
+
+- microinterações
+
+- estados hover/touch
+
+- skeleton loaders
+
+- consistência visual
+
+26. Melhorar design system
+
+Padronizar:
+
+- botões
+
+- espaçamentos
+
+- sombras
+
+- badges
+
+- inputs
+
+- cards
+
+27. Criar sensação de fluidez
+
+- transições suaves
+
+- feedback instantâneo
+
+- carregamento elegante
+
+==================================================
+
+FASE 9 — SEGURANÇA E QUALIDADE
+
+==================================================
+
+28. Melhorar segurança
+
+Adicionar:
+
+- rate limiting
+
+- sanitização
+
+- validações fortes
+
+- proteção contra spam
+
+29. Revisar validações backend/frontend
+
+Garantir consistência.
+
+30. Melhorar logs
+
+Criar logs organizados:
+
+- API
+
+- erros
+
+- autenticação
+
+- moderação
+
+==================================================
+
+FASE 10 — FINALIZAÇÃO
+
+==================================================
+
+31. Rodar:
+
+- TypeScript check
+
+- frontend build
+
+- backend build
+
+32. Corrigir:
+
+- warnings
+
+- imports quebrados
+
+- problemas de tipagem
+
+- erros silenciosos
+
+- problemas de responsividade
+
+33. Garantir:
+
+- experiência mobile premium
+
+- nenhuma tela quebrada
+
+- ótima performance
+
+- fluidez geral
+
+34. Ao finalizar:
+
+Gerar relatório completo contendo:
+
+- arquitetura criada
+
+- arquivos alterados
+
+- melhorias implementadas
+
+- performance otimizada
+
+- próximos passos recomendados
+
+- sugestões futuras de escalabilidade

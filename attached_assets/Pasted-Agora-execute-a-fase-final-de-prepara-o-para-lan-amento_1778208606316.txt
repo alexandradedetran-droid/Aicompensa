@@ -1,0 +1,473 @@
+Agora execute a fase final de preparação para lançamento real do produto em produção.
+
+IMPORTANTE:
+
+- NÃO quebrar funcionalidades existentes.
+
+- NÃO remover recursos atuais.
+
+- NÃO simplificar implementações já feitas.
+
+- Preservar toda lógica anterior.
+
+- Revisar o projeto inteiro antes de alterar qualquer arquivo.
+
+- Corrigir TODOS os erros encontrados.
+
+- Garantir estabilidade e qualidade de produção.
+
+OBJETIVO:
+
+Transformar o sistema em um produto robusto, estável, rápido, confiável e pronto para usuários reais em escala.
+
+==================================================
+
+FASE 1 — AUDITORIA COMPLETA
+
+==================================================
+
+1. Fazer auditoria geral do projeto
+
+Analisar:
+
+- frontend
+
+- backend
+
+- banco
+
+- rotas
+
+- autenticação
+
+- performance
+
+- responsividade
+
+- segurança
+
+- SEO
+
+- UX
+
+2. Encontrar:
+
+- código duplicado
+
+- componentes desnecessários
+
+- hooks repetidos
+
+- consultas pesadas
+
+- renderizações excessivas
+
+- tipagens frágeis
+
+- possíveis memory leaks
+
+- possíveis gargalos
+
+3. Refatorar sem quebrar funcionalidades.
+
+==================================================
+
+FASE 2 — HARDENING DE PRODUÇÃO
+
+==================================================
+
+4. Melhorar segurança backend
+
+Adicionar:
+
+- rate limiting
+
+- sanitização de inputs
+
+- proteção contra spam
+
+- proteção contra brute force
+
+- headers de segurança
+
+- validação forte
+
+5. Melhorar autenticação
+
+Garantir:
+
+- sessões seguras
+
+- tokens seguros
+
+- proteção de rotas
+
+- proteção admin
+
+6. Melhorar validações
+
+Frontend e backend devem validar:
+
+- ofertas
+
+- comentários
+
+- uploads
+
+- autenticação
+
+- denúncias
+
+==================================================
+
+FASE 3 — PERFORMANCE REAL
+
+==================================================
+
+7. Otimizar queries SQL
+
+Adicionar índices estratégicos:
+
+- produto normalizado
+
+- categoria
+
+- mercado
+
+- localização
+
+- score
+
+- data
+
+8. Melhorar carregamento frontend
+
+Aplicar:
+
+- lazy loading
+
+- code splitting
+
+- memoização
+
+- suspense
+
+- otimização de listas
+
+9. Melhorar carregamento mobile
+
+Objetivo:
+
+experiência extremamente rápida em celular simples.
+
+==================================================
+
+FASE 4 — QUALIDADE VISUAL ABSOLUTA
+
+==================================================
+
+10. Revisar TODAS as telas
+
+Garantir:
+
+- nenhum texto sobreposto
+
+- nenhum botão quebrado
+
+- nenhum overflow
+
+- nenhuma tela desalinhada
+
+- responsividade perfeita
+
+11. Refinar design system
+
+Padronizar:
+
+- sombras
+
+- fontes
+
+- espaçamentos
+
+- botões
+
+- badges
+
+- inputs
+
+- cards
+
+- modais
+
+12. Melhorar microinterações
+
+Adicionar:
+
+- feedback visual
+
+- loading elegante
+
+- skeleton loaders premium
+
+- animações suaves
+
+==================================================
+
+FASE 5 — PWA E APP EXPERIENCE
+
+==================================================
+
+13. Finalizar PWA
+
+Adicionar:
+
+- manifest
+
+- splash screen
+
+- install prompt
+
+- ícones corretos
+
+- cache offline básico
+
+14. Melhorar sensação de app nativo
+
+Criar:
+
+- navegação fluida
+
+- bottom navigation premium
+
+- transições suaves
+
+- boa experiência touch
+
+==================================================
+
+FASE 6 — SEO E CRESCIMENTO
+
+==================================================
+
+15. Revisar SEO completo
+
+Adicionar:
+
+- sitemap
+
+- robots
+
+- canonical
+
+- Open Graph
+
+- Twitter Cards
+
+- schema.org
+
+16. Garantir indexação de produtos
+
+Cada produto deve possuir:
+
+- URL própria
+
+- título otimizado
+
+- descrição otimizada
+
+- SEO dinâmico
+
+==================================================
+
+FASE 7 — ANALYTICS E MONITORAMENTO
+
+==================================================
+
+17. Preparar analytics
+
+Estruturar suporte para:
+
+- page views
+
+- cliques
+
+- retenção
+
+- conversão
+
+- regiões
+
+- produtos populares
+
+18. Criar logs organizados
+
+Separar:
+
+- API
+
+- autenticação
+
+- erros
+
+- moderação
+
+- performance
+
+19. Melhorar observabilidade
+
+Adicionar:
+
+- error boundaries
+
+- tratamento global de erros
+
+- fallbacks elegantes
+
+==================================================
+
+FASE 8 — MONETIZAÇÃO FINAL
+
+==================================================
+
+20. Refinar patrocinados
+
+Criar:
+
+- cards premium
+
+- destaque elegante
+
+- sem poluição visual
+
+21. Preparar estrutura premium
+
+Base pronta para:
+
+- assinatura
+
+- alertas avançados
+
+- analytics premium
+
+- mercados parceiros
+
+==================================================
+
+FASE 9 — EXPERIÊNCIA DE LANÇAMENTO
+
+==================================================
+
+22. Melhorar onboarding
+
+Criar experiência inicial elegante:
+
+- introdução rápida
+
+- benefícios
+
+- localização
+
+- favoritos
+
+- alertas
+
+23. Criar empty states premium
+
+Nunca deixar telas vazias.
+
+24. Criar estados de erro elegantes
+
+Sem mensagens técnicas para usuário final.
+
+==================================================
+
+FASE 10 — TESTE FINAL ABSOLUTO
+
+==================================================
+
+25. Rodar:
+
+- TypeScript check
+
+- frontend build
+
+- backend build
+
+26. Corrigir:
+
+- warnings
+
+- imports quebrados
+
+- problemas de build
+
+- problemas de tipagem
+
+- problemas mobile
+
+27. Revisar:
+
+- todas as rotas
+
+- todas as páginas
+
+- todos os formulários
+
+- autenticação
+
+- admin
+
+- feed
+
+- comparação
+
+- favoritos
+
+- alertas
+
+- mapa
+
+- notificações
+
+28. Garantir:
+
+- estabilidade
+
+- fluidez
+
+- excelente experiência mobile
+
+- aparência premium
+
+- nenhuma tela quebrada
+
+29. Fazer revisão final de produção
+
+Objetivo:
+
+parecer produto pronto para milhares de usuários.
+
+30. Ao finalizar:
+
+Gerar relatório extremamente detalhado contendo:
+
+- melhorias implementadas
+
+- arquivos alterados
+
+- melhorias visuais
+
+- melhorias técnicas
+
+- melhorias de performance
+
+- melhorias de segurança
+
+- melhorias de arquitetura
+
+- recomendações para deploy
+
+- recomendações para crescimento
+
+- possíveis próximos passos estratégicos

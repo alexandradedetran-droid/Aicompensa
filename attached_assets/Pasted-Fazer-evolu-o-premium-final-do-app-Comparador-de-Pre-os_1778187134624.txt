@@ -1,0 +1,397 @@
+Fazer evolução premium final do app Comparador de Preços.
+
+OBJETIVO:
+
+Transformar o app em um produto altamente profissional, viciante e pronto para testes reais com usuários.
+
+IMPORTANTE:
+
+- manter HTML, CSS e JavaScript puro
+
+- manter Node.js + Express
+
+- não usar React novo se o projeto não estiver usando
+
+- não quebrar funcionalidades atuais
+
+- manter visual premium dark mode já existente
+
+====================================================
+
+1. MELHORAR HOME
+
+====================================================
+
+Adicionar sensação de tempo real.
+
+Criar seção:
+
+🔥 Novas ofertas perto de você
+
+Mostrar:
+
+- quantidade de ofertas novas nas últimas 2 horas
+
+- texto:
+
+“Última atualização há X minutos”
+
+Adicionar seção:
+
+⚡ Confirmadas hoje
+
+Mostrar até 5 ofertas com:
+
+- foto
+
+- produto
+
+- preço
+
+- mercado
+
+- distância
+
+- badge “Confirmado hoje”
+
+====================================================
+
+2. HISTÓRICO DE PREÇO
+
+====================================================
+
+Cada oferta deve armazenar histórico simples de preços.
+
+Ao atualizar preço:
+
+- salvar histórico anterior
+
+Criar modal ao clicar na oferta contendo:
+
+- foto grande
+
+- produto
+
+- mercado
+
+- bairro/cidade
+
+- histórico de preço
+
+Exemplo:
+
+R$ 29,90 → 7 dias atrás
+
+R$ 26,90 → 3 dias atrás
+
+R$ 22,90 → hoje
+
+Mostrar:
+
+📉 caiu X%
+
+====================================================
+
+3. COMPARAÇÃO DE PREÇO
+
+====================================================
+
+Nos cards mostrar:
+
+DE R$ 14,90
+
+POR R$ 9,90
+
+Se houver preço anterior.
+
+Destacar economia:
+
+“Economize R$ 5”
+
+====================================================
+
+4. MAPA DE OFERTAS
+
+====================================================
+
+Criar tela Mapa usando Leaflet.js.
+
+Mostrar:
+
+- localização do usuário
+
+- pins das ofertas
+
+Pins:
+
+🟢 barato
+
+🟡 médio
+
+🔴 caro
+
+Ao clicar no pin:
+
+mostrar mini card:
+
+- foto
+
+- produto
+
+- preço
+
+- mercado
+
+- botão “Ver oferta”
+
+Botão:
+
+“Ofertas perto de mim”
+
+centraliza mapa.
+
+====================================================
+
+5. ALERTA DE PREÇO
+
+====================================================
+
+Usuário pode criar alerta:
+
+Produto:
+
+Preço alvo:
+
+Salvar no banco.
+
+Criar tela:
+
+“Meus alertas”
+
+Quando nova oferta atender condição:
+
+mostrar badge:
+
+🔔 Oferta encontrada
+
+Na home:
+
+“Você tem X alertas ativos”
+
+====================================================
+
+6. LISTA DE COMPRAS
+
+====================================================
+
+Criar tela:
+
+“Minha lista”
+
+Usuário adiciona:
+
+- arroz
+
+- leite
+
+- café
+
+etc.
+
+App deve:
+
+- procurar melhores preços
+
+- mostrar qual mercado fica mais barato
+
+- mostrar economia total
+
+====================================================
+
+7. OCR / FOTO INTELIGENTE
+
+====================================================
+
+Ao tirar foto:
+
+mostrar:
+
+“Analisando produto…”
+
+Preparar estrutura para:
+
+- reconhecer texto da etiqueta
+
+- preencher automaticamente:
+
+produto e preço
+
+Mesmo que inicialmente seja mock/simulado.
+
+====================================================
+
+8. MELHORAR CARDS
+
+====================================================
+
+Se não houver foto:
+
+usar imagem padrão da categoria.
+
+Adicionar:
+
+📍 distância do usuário
+
+🔥 confirmado há X min
+
+Melhorar botão Curtir:
+
+- visual mais premium
+
+Transformar denúncia em:
+
+⚠ Reportar
+
+====================================================
+
+9. REPUTAÇÃO
+
+====================================================
+
+Usuários ganham selos:
+
+🟤 Bronze
+
+⚪ Prata
+
+🟡 Ouro
+
+💎 Diamante
+
+Adicionar:
+
+🔥 Caçador Elite
+
+para usuários com muitas validações.
+
+====================================================
+
+10. ESTATÍSTICAS
+
+====================================================
+
+Criar dashboard simples mostrando:
+
+- total de economia encontrada hoje
+
+- produto mais barato do dia
+
+- mercado mais econômico
+
+- ofertas confirmadas hoje
+
+====================================================
+
+11. MICROINTERAÇÕES
+
+====================================================
+
+Adicionar:
+
+- loading skeleton
+
+- animações suaves
+
+- feedback visual:
+
+“+10 pontos 🎉”
+
+“Oferta confirmada ✅”
+
+====================================================
+
+12. PERFORMANCE
+
+====================================================
+
+Melhorar:
+
+- carregamento das imagens
+
+- listas grandes
+
+- evitar renderizações desnecessárias
+
+====================================================
+
+13. SEGURANÇA
+
+====================================================
+
+Garantir:
+
+- CPF mascarado
+
+- telefone mascarado
+
+- proteção admin
+
+- rate limit publicação
+
+- validação de preço
+
+- validação de imagem
+
+====================================================
+
+14. MOBILE PREMIUM
+
+====================================================
+
+O app deve parecer:
+
+- iFood
+
+- Uber
+
+- Nubank
+
+Foco:
+
+- mobile first
+
+- usabilidade com uma mão
+
+- cards modernos
+
+- dark mode elegante
+
+- glow suave
+
+- contraste forte
+
+====================================================
+
+15. ENTREGA
+
+====================================================
+
+Atualizar:
+
+- index.js
+
+- db.json
+
+- public/index.html
+
+- public/app.js
+
+- public/style.css
+
+Se existirem outras estruturas:
+
+- manter organização atual
+
+RESULTADO FINAL:
+
+Um app premium, moderno, viciante e pronto para crescer.

@@ -1,0 +1,381 @@
+Analise TODO o projeto antes de modificar qualquer arquivo.
+
+IMPORTANTE:
+
+- NÃO quebrar funcionalidades existentes.
+
+- NÃO alterar login atual.
+
+- Usuários sem login continuam podendo visualizar promoções.
+
+- Login continua obrigatório apenas para publicar/interagir.
+
+- NÃO remover o feed atual.
+
+- NÃO criar regressões.
+
+- Corrigir erros de TypeScript/build ao final.
+
+OBJETIVO:
+
+Implementar sistema inteligente de detecção de ofertas duplicadas e transformar publicações repetidas em CONFIRMAÇÕES da oferta existente.
+
+==================================================
+
+REGRA PRINCIPAL
+
+==================================================
+
+Se usuários publicarem:
+
+- mesmo produto
+
+- mesmo supermercado
+
+- preço igual ou muito próximo
+
+- dentro de uma janela de tempo
+
+O sistema NÃO deve criar nova oferta.
+
+O sistema deve:
+
+- reutilizar a oferta existente
+
+- criar confirmação da oferta
+
+- aumentar confiança
+
+- atualizar última confirmação
+
+==================================================
+
+FASE 1 — MODELAGEM
+
+==================================================
+
+1. Revisar estrutura atual de ofertas.
+
+2. Criar estrutura de confirmações.
+
+Criar tabela:
+
+offer_confirmations
+
+Campos sugeridos:
+
+- id
+
+- offer_id
+
+- user_id
+
+- confirmed_at
+
+- created_at
+
+3. Garantir relacionamento correto:
+
+offer
+
+-> múltiplas confirmações
+
+==================================================
+
+FASE 2 — NORMALIZAÇÃO
+
+==================================================
+
+4. Criar função reutilizável:
+
+normalizeProductName()
+
+Ela deve:
+
+- remover acentos
+
+- remover hífen
+
+- ignorar maiúsculas/minúsculas
+
+- padronizar:
+
+  litros -> l
+
+  quilograma -> kg
+
+  mililitros -> ml
+
+- remover espaços duplicados
+
+Exemplo:
+
+“Coca Cola 2 Litros”
+
+=> “coca cola 2l”
+
+==================================================
+
+FASE 3 — DETECÇÃO DE DUPLICIDADE
+
+==================================================
+
+5. Criar função:
+
+findSimilarOffer()
+
+Ela deve comparar:
+
+- produto normalizado
+
+- supermercado
+
+- faixa de preço
+
+- validade
+
+- janela de tempo
+
+==================================================
+
+REGRAS
+
+==================================================
+
+Considerar mesma oferta quando:
+
+- mesmo produto normalizado
+
+- mesmo supermercado
+
+- diferença de preço <= 5%
+
+- criada nas últimas X horas
+
+- não expirada
+
+Esses limites devem ficar centralizados em constantes/config.
+
+==================================================
+
+FASE 4 — PUBLICAÇÃO INTELIGENTE
+
+==================================================
+
+6. Alterar fluxo de publicação.
+
+ANTES:
+
+Toda publicação cria nova oferta.
+
+AGORA:
+
+Ao publicar:
+
+PASSO 1:
+
+normalizar produto
+
+PASSO 2:
+
+buscar oferta semelhante
+
+SE EXISTIR:
+
+- NÃO criar nova oferta
+
+- criar confirmação
+
+- atualizar:
+
+  - confirmations_count
+
+  - last_confirmed_at
+
+  - score
+
+SE NÃO EXISTIR:
+
+- criar nova oferta normalmente
+
+==================================================
+
+FASE 5 — EXPERIÊNCIA VISUAL
+
+==================================================
+
+7. Melhorar visual dos cards.
+
+Mostrar:
+
+- quantidade de confirmações
+
+- última confirmação
+
+- selo:
+
+  “Confirmado por X usuários”
+
+- selo:
+
+  “Confirmado hoje”
+
+Exemplo:
+
+“Confirmado por 6 usuários”
+
+“Última confirmação há 12 minutos”
+
+==================================================
+
+FASE 6 — COMPORTAMENTO DO FEED
+
+==================================================
+
+8. Evitar duplicação visual.
+
+O feed NÃO deve mostrar:
+
+- múltiplas ofertas idênticas
+
+- mesmo produto repetido no mesmo mercado
+
+Mostrar apenas:
+
+- melhor versão da oferta
+
+- mais recente
+
+- mais confiável
+
+==================================================
+
+FASE 7 — SCORE DE CONFIANÇA
+
+==================================================
+
+9. Melhorar score da oferta.
+
+Considerar:
+
+- quantidade de confirmações
+
+- validações
+
+- denúncias
+
+- recência
+
+- usuário confiável
+
+==================================================
+
+FASE 8 — HISTÓRICO
+
+==================================================
+
+10. Se o preço mudar muito:
+
+criar nova oferta.
+
+Exemplo:
+
+R$ 6,99 -> R$ 8,49
+
+Isso deve virar:
+
+- nova versão
+
+OU
+
+- novo histórico
+
+11. Preparar estrutura para histórico de preços.
+
+==================================================
+
+FASE 9 — ANTI-SPAM
+
+==================================================
+
+12. Impedir flood.
+
+Usuário não deve conseguir:
+
+- confirmar infinitamente
+
+- publicar mesma oferta repetidamente
+
+Criar:
+
+- limite temporal
+
+- proteção anti-spam
+
+==================================================
+
+FASE 10 — PERFORMANCE
+
+==================================================
+
+13. Criar índices SQL para:
+
+- produto normalizado
+
+- supermercado
+
+- data
+
+- score
+
+14. Otimizar consultas.
+
+==================================================
+
+FASE 11 — FINALIZAÇÃO
+
+==================================================
+
+15. Rodar:
+
+- TypeScript check
+
+- frontend build
+
+- backend build
+
+16. Corrigir:
+
+- warnings importantes
+
+- imports quebrados
+
+- tipagens frágeis
+
+- problemas de performance
+
+17. Garantir:
+
+- nenhuma funcionalidade quebrada
+
+- feed limpo
+
+- experiência mobile funcionando
+
+18. Ao finalizar:
+
+Gerar relatório detalhado contendo:
+
+- arquivos alterados
+
+- lógica implementada
+
+- regras de duplicidade
+
+- regras de confirmação
+
+- melhorias de performance
+
+- melhorias de UX
+
+- possíveis melhorias futuras

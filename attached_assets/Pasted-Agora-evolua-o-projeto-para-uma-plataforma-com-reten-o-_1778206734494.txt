@@ -1,0 +1,443 @@
+Agora evolua o projeto para uma plataforma com retenção forte, gamificação inteligente e experiência viciante, mantendo toda a estrutura atual funcionando.
+
+IMPORTANTE:
+
+- Não quebrar funcionalidades existentes.
+
+- Não remover recursos atuais.
+
+- Não alterar autenticação.
+
+- Usuários sem login continuam podendo visualizar promoções.
+
+- Login obrigatório apenas para interações.
+
+- Manter React + TypeScript + Express + PostgreSQL + Drizzle.
+
+- Corrigir todos os erros ao final.
+
+OBJETIVO:
+
+Transformar o app em uma plataforma onde o usuário tenha motivo para voltar diariamente.
+
+==================================================
+
+FASE 1 — PERFIL E GAMIFICAÇÃO
+
+==================================================
+
+1. Evoluir sistema de nível do usuário
+
+Criar níveis reais com progressão.
+
+Exemplo:
+
+- Iniciante
+
+- Explorador
+
+- Caçador de Ofertas
+
+- Especialista
+
+- Mestre da Economia
+
+- Lenda das Promoções
+
+2. Criar XP do usuário
+
+Usuário ganha XP por:
+
+- publicar oferta
+
+- oferta validada
+
+- denúncia correta
+
+- curtidas recebidas
+
+- login diário
+
+- comentar
+
+- salvar ofertas
+
+- confirmar preço
+
+3. Criar streak diário
+
+Mostrar:
+
+“Você economiza há 7 dias seguidos”
+
+4. Criar recompensas visuais
+
+Adicionar:
+
+- badges
+
+- conquistas
+
+- selos especiais
+
+- usuário destaque
+
+Exemplos:
+
+- Primeira oferta
+
+- 10 ofertas validadas
+
+- Rei do bairro
+
+- Caçador local
+
+- Oferta viral
+
+==================================================
+
+FASE 2 — SISTEMA SOCIAL
+
+==================================================
+
+5. Criar sistema de seguir usuários
+
+Usuário pode seguir:
+
+- pessoas
+
+- mercados
+
+- categorias
+
+6. Criar feed personalizado
+
+Priorizar:
+
+- mercados favoritos
+
+- promoções próximas
+
+- categorias favoritas
+
+- usuários seguidos
+
+7. Criar comentários nas ofertas
+
+Com:
+
+- curtidas
+
+- respostas
+
+- denúncia
+
+- ordenação inteligente
+
+8. Criar compartilhamento rápido
+
+Compartilhar oferta para:
+
+- WhatsApp
+
+- Instagram
+
+- copiar link
+
+==================================================
+
+FASE 3 — ALERTAS INTELIGENTES
+
+==================================================
+
+9. Melhorar alertas de preço
+
+Usuário pode:
+
+- seguir produto
+
+- definir preço máximo
+
+- escolher raio de distância
+
+Exemplo:
+
+“Me avise se Coca-Cola 2L ficar abaixo de R$ 6 até 5 km de mim”
+
+10. Criar notificações inteligentes
+
+Mostrar:
+
+- nova oferta perto
+
+- queda de preço
+
+- oferta muito curtida
+
+- produto favoritado em promoção
+
+11. Criar central de notificações
+
+Com:
+
+- lidas/não lidas
+
+- filtros
+
+- histórico
+
+==================================================
+
+FASE 4 — CONFIANÇA E QUALIDADE
+
+==================================================
+
+12. Criar confirmação de preço
+
+Usuários podem confirmar:
+
+“Preço conferido hoje”
+
+13. Criar validade automática
+
+Ofertas antigas perdem prioridade automaticamente.
+
+14. Criar detecção de spam/suspeita
+
+Reduzir score de:
+
+- usuários com muitas denúncias
+
+- ofertas inconsistentes
+
+- preços irreais
+
+15. Criar selo:
+
+- Oferta confiável
+
+- Super oferta
+
+- Tendência na região
+
+==================================================
+
+FASE 5 — HOME MAIS VICIANTE
+
+==================================================
+
+16. Melhorar homepage
+
+Adicionar seções:
+
+- Promoções perto de você
+
+- Mais economizadas hoje
+
+- Mais curtidas
+
+- Tendência no bairro
+
+- Últimos preços confirmados
+
+- Mercados mais baratos da semana
+
+17. Criar carrossel premium
+
+Para:
+
+- melhores promoções
+
+- patrocinados
+
+- destaque do dia
+
+18. Criar ranking regional
+
+Exemplo:
+
+- Top usuários de Cuiabá
+
+- Mercado mais barato da semana
+
+- Bairro com maior economia
+
+==================================================
+
+FASE 6 — PERFIL DO USUÁRIO
+
+==================================================
+
+19. Melhorar tela de perfil
+
+Mostrar:
+
+- XP
+
+- nível
+
+- ranking
+
+- quantidade economizada estimada
+
+- ofertas publicadas
+
+- validações
+
+- conquistas
+
+- streak
+
+20. Criar histórico do usuário
+
+- ofertas publicadas
+
+- ofertas salvas
+
+- alertas
+
+- comentários
+
+==================================================
+
+FASE 7 — MONETIZAÇÃO
+
+==================================================
+
+21. Preparar estrutura para monetização
+
+Criar suporte para:
+
+- ofertas patrocinadas
+
+- destaque premium
+
+- mercados parceiros
+
+22. Criar espaço patrocinado visualmente elegante
+
+Sem poluir experiência.
+
+23. Criar painel futuro para mercados
+
+Preparar estrutura:
+
+- analytics
+
+- alcance
+
+- visualizações
+
+- cliques
+
+==================================================
+
+FASE 8 — PERFORMANCE
+
+==================================================
+
+24. Melhorar performance geral
+
+Evitar:
+
+- re-renderizações
+
+- queries repetidas
+
+- consultas pesadas
+
+25. Criar lazy loading
+
+Onde fizer sentido.
+
+26. Melhorar paginação/infinite scroll.
+
+==================================================
+
+FASE 9 — EXPERIÊNCIA PREMIUM
+
+==================================================
+
+27. Melhorar identidade visual
+
+Quero aparência:
+
+- mais única
+
+- menos template
+
+- mais moderna
+
+- mais premium
+
+- mais app grande
+
+Melhorar:
+
+- tipografia
+
+- cards
+
+- animações suaves
+
+- espaçamento
+
+- microinterações
+
+- estados de loading
+
+28. Melhorar skeleton loaders
+
+Evitar telas vazias.
+
+29. Criar empty states inteligentes
+
+Exemplo:
+
+“Nenhuma promoção encontrada ainda nessa região.”
+
+==================================================
+
+FASE 10 — FINALIZAÇÃO
+
+==================================================
+
+30. Rodar:
+
+- TypeScript check
+
+- frontend build
+
+- backend build
+
+31. Corrigir:
+
+- warnings importantes
+
+- imports quebrados
+
+- problemas de responsividade
+
+- sobreposição de texto
+
+32. Garantir:
+
+- funcionamento mobile-first
+
+- nenhuma tela quebrada
+
+- boa experiência em telas pequenas
+
+33. Ao final:
+
+Gerar resumo contendo:
+
+- funcionalidades implementadas
+
+- arquivos alterados
+
+- melhorias visuais
+
+- melhorias de performance
+
+- futuras recomendações

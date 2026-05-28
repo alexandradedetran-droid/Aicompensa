@@ -1,0 +1,253 @@
+Agora evolua o projeto para a fase de “Radar de Promoções Próximas”.
+
+Antes de alterar qualquer arquivo:
+
+- Analise a estrutura atual.
+
+- Preserve todas as funcionalidades existentes.
+
+- Não quebre login, publicação, feed, comparação, validação, denúncia, favoritos e alertas.
+
+- Usuário sem login continua podendo visualizar promoções.
+
+- Login obrigatório apenas para ações interativas.
+
+OBJETIVO:
+
+Criar uma experiência de localização para o usuário encontrar promoções próximas, mercados próximos e melhores preços por distância.
+
+FASE 1 — LOCALIZAÇÃO DO USUÁRIO
+
+1. Criar solicitação de localização no frontend:
+
+- pedir permissão de localização de forma amigável
+
+- explicar o benefício: “encontrar promoções perto de você”
+
+- permitir continuar sem localização
+
+- salvar latitude/longitude temporariamente no estado/localStorage
+
+2. Se o usuário negar localização:
+
+- manter app funcionando normalmente
+
+- mostrar opção manual de cidade/bairro
+
+- permitir buscar promoções por cidade
+
+FASE 2 — LOCALIZAÇÃO DOS MERCADOS
+
+3. Garantir que cada mercado/oferta tenha:
+
+- nome do mercado
+
+- endereço
+
+- bairro
+
+- cidade
+
+- estado
+
+- latitude
+
+- longitude
+
+4. Se latitude/longitude não existir:
+
+- não quebrar a tela
+
+- mostrar apenas cidade/bairro
+
+- deixar distância como “distância indisponível”
+
+FASE 3 — CÁLCULO DE DISTÂNCIA
+
+5. Criar função reutilizável:
+
+calculateDistanceKm(userLat, userLng, marketLat, marketLng)
+
+Usar fórmula Haversine.
+
+6. Exibir distância nos cards:
+
+Exemplo:
+
+- “850 m de você”
+
+- “1,4 km de você”
+
+- “Distância indisponível”
+
+FASE 4 — RADAR DE PROMOÇÕES
+
+7. Criar nova seção na Home:
+
+“Radar de Promoções Próximas”
+
+Mostrar cards com:
+
+- produto
+
+- menor preço
+
+- mercado
+
+- distância
+
+- bairro
+
+- selo “perto de você”
+
+- botão “ver ofertas”
+
+8. Criar filtro de raio:
+
+- até 1 km
+
+- até 3 km
+
+- até 5 km
+
+- até 10 km
+
+- qualquer distância
+
+9. Criar ordenação:
+
+- mais perto
+
+- menor preço
+
+- melhor custo-benefício
+
+- mais recente
+
+- mais validada
+
+FASE 5 — MAPA
+
+10. Criar tela ou aba “Mapa”
+
+Com visual premium mobile-first.
+
+11. Mostrar ofertas no mapa usando pins:
+
+- pin com preço
+
+- nome do produto
+
+- nome do mercado
+
+- distância
+
+12. Ao clicar no pin:
+
+abrir card resumido da oferta com:
+
+- produto
+
+- preço
+
+- mercado
+
+- distância
+
+- validade
+
+- botão “ver detalhes”
+
+13. Se a chave de API de mapa não estiver configurada:
+
+- não quebrar o projeto
+
+- mostrar fallback em lista
+
+- deixar comentário claro no código indicando onde configurar
+
+FASE 6 — MELHOR CUSTO-BENEFÍCIO
+
+14. Criar cálculo de custo-benefício:
+
+Não é sempre a oferta mais barata que vale a pena.
+
+Considerar:
+
+- preço
+
+- distância
+
+- confiança da oferta
+
+- validações
+
+- denúncias
+
+- validade
+
+Criar função:
+
+getBestValueOffer()
+
+Exemplo:
+
+Uma oferta R$ 0,50 mais cara a 500 metros pode valer mais que uma barata a 8 km.
+
+FASE 7 — UX PREMIUM
+
+15. Melhorar experiência visual:
+
+- cards limpos
+
+- preço em destaque
+
+- selo “melhor perto de você”
+
+- selo “vale a viagem”
+
+- selo “menor preço da região”
+
+- evitar poluição visual
+
+- evitar texto sobreposto
+
+- manter responsividade total
+
+16. Criar estado vazio:
+
+Se não houver promoções próximas:
+
+“Não encontramos promoções próximas agora.”
+
+Botões:
+
+- “Aumentar raio”
+
+- “Ver todas as promoções”
+
+- “Publicar uma oferta”
+
+FASE 8 — FINALIZAÇÃO
+
+17. Rodar:
+
+- TypeScript check
+
+- build frontend
+
+- build backend
+
+18. Corrigir todos os erros encontrados.
+
+19. Ao final, entregar resumo com:
+
+- arquivos alterados
+
+- funcionalidades criadas
+
+- regras de localização
+
+- limitações caso mapa/API não esteja configurado
+
+- próximos passos recomendados
