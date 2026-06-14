@@ -7,3 +7,5 @@ Stack:
 - Node.js
 - PostgreSQL
 - TypeScript
+
+Versão executada no pc 14-06-2026
