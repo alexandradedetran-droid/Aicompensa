@@ -1,4 +1,4 @@
-const CACHE_NAME = "comparador-v1";
+const CACHE_NAME = "aicompensa-v2";
 const API_CACHE = "comparador-api-v1";
 
 const STATIC_PRECACHE = [
