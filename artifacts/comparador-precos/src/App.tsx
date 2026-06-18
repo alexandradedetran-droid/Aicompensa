@@ -1,6 +1,6 @@
 import { lazy, Suspense, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
+import { Switch, Route, Router as WouterRouter, useLocation, Redirect } from "wouter";
 import { AnimatePresence } from "framer-motion";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -15,13 +15,15 @@ import Home from "@/pages/home";
 import Ofertas from "@/pages/ofertas";
 
 // Lazy: secondary routes (code-split into separate chunks)
-const Publicar   = lazy(() => import("@/pages/publicar"));
-const Ranking    = lazy(() => import("@/pages/ranking"));
-const Perfil     = lazy(() => import("@/pages/perfil"));
-const Mapa       = lazy(() => import("@/pages/mapa"));
-const Alertas    = lazy(() => import("@/pages/alertas"));
-const Lista      = lazy(() => import("@/pages/lista"));
-const NotFound   = lazy(() => import("@/pages/not-found"));
+const Publicar     = lazy(() => import("@/pages/publicar"));
+const Ranking      = lazy(() => import("@/pages/ranking"));
+const Perfil       = lazy(() => import("@/pages/perfil"));
+const Mapa         = lazy(() => import("@/pages/mapa"));
+const Alertas      = lazy(() => import("@/pages/alertas"));
+const Lista        = lazy(() => import("@/pages/lista"));
+const Listas       = lazy(() => import("@/pages/listas"));
+const ListaDetalhe = lazy(() => import("@/pages/lista-detalhe"));
+const NotFound     = lazy(() => import("@/pages/not-found"));
 
 // Admin routes — fully lazy (separate chunk)
 const Admin      = lazy(() => import("@/pages/admin"));
@@ -87,7 +89,13 @@ function Router() {
               <Route path="/perfil" component={Perfil} />
               <Route path="/mapa" component={Mapa} />
               <Route path="/alertas" component={Alertas} />
-              <Route path="/lista" component={Lista} />
+              <Route path="/listas" component={Listas} />
+              <Route path="/listas/:id" component={ListaDetalhe} />
+              {/* Legacy /lista → redirect to /listas */}
+              <Route path="/lista">
+                <Redirect to="/listas" />
+              </Route>
+              <Route path="/lista/:codigo" component={Lista} />
               <Route component={NotFound} />
             </Switch>
           </Suspense>

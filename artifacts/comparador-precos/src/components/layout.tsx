@@ -1,5 +1,5 @@
 import { useLocation } from "wouter";
-import { Home, Store, Plus, Map, User } from "lucide-react";
+import { Home, Store, Plus, User, ShoppingCart } from "lucide-react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { getCurrentUser } from "@/lib/current-user";
@@ -22,12 +22,23 @@ export function Layout({ children }: LayoutProps) {
   }
 
   const navItems = [
-    { href: "/",         label: "Home",    icon: Home,  guarded: false },
-    { href: "/ofertas",  label: "Ofertas", icon: Store, guarded: false },
-    { href: "/publicar", label: "+",       icon: Plus,  guarded: true, isMain: true },
-    { href: "/mapa",     label: "Mapa",    icon: Map,   guarded: false },
-    { href: "/perfil",   label: "Perfil",  icon: User,  guarded: true },
+    { href: "/",        label: "Home",    icon: Home,         guarded: false },
+    { href: "/ofertas", label: "Ofertas", icon: Store,        guarded: false },
+    { href: "/publicar",label: "+",       icon: Plus,         guarded: true, isMain: true },
+    { href: "/listas",  label: "Compras", icon: ShoppingCart, guarded: false },
+    { href: "/perfil",  label: "Perfil",  icon: User,         guarded: true },
   ];
+
+  // Contextual FAB: adapts action based on current route
+  function handleFab() {
+    if (location === "/listas") {
+      window.dispatchEvent(new CustomEvent("aicompensa:fab:nova-lista"));
+    } else if (location.startsWith("/listas/")) {
+      window.dispatchEvent(new CustomEvent("aicompensa:fab:add-item"));
+    } else {
+      guardedNavigate("/publicar");
+    }
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-[#0f172a]">
@@ -88,14 +99,16 @@ export function Layout({ children }: LayoutProps) {
       >
         <div className="flex justify-around items-center h-[60px] px-1 max-w-lg mx-auto relative">
           {navItems.map((item) => {
-            const isActive = location === item.href;
+            const isActive = item.href === "/"
+              ? location === "/"
+              : location === item.href || location.startsWith(item.href + "/");
 
             if (item.isMain) {
               return (
                 <div key={item.href} className="relative flex-1 flex justify-center">
                   {/* The FAB sits centered, lifted above the nav */}
                   <button
-                    onClick={() => guardedNavigate(item.href)}
+                    onClick={handleFab}
                     className="absolute -top-5 flex items-center justify-center rounded-full transition-all active:scale-90"
                     style={{
                       height: "52px",
