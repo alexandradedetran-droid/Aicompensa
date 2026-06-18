@@ -178,9 +178,9 @@ export function OfertaModal({
 
         {/* ── Hero photo / category art ──────────────────────────────── */}
         <div style={{ position: "relative", width: "100%", height: 200, background: cat.bg, flexShrink: 0 }}>
-          {oferta.fotoUrl ? (
+          {(oferta.imagemExibicao ?? oferta.fotoUrl) ? (
             <img
-              src={oferta.fotoUrl}
+              src={(oferta.imagemExibicao ?? oferta.fotoUrl)!}
               alt={oferta.produto}
               style={{ width: "100%", height: "100%", objectFit: "cover", display: "block" }}
               onError={(e) => {

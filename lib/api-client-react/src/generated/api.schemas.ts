@@ -40,6 +40,7 @@ export interface Oferta {
   bairro?: string | null;
   cidade?: string | null;
   fotoUrl?: string | null;
+  imagemExibicao?: string | null;
   validade?: string | null;
   latitude?: number | null;
   longitude?: number | null;

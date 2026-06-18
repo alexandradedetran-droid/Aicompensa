@@ -8,7 +8,32 @@
       "Bash(curl -s http://localhost:5173/)",
       "Bash(curl -s http://localhost:5173/api/ofertas)",
       "Bash(curl -s http://localhost:8080/api/stats)",
-      "Bash(git config *)"
+      "Bash(git config *)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(tar -tzf \"c:/aicompensa/comparador-precos \\(1\\).tar.gz\")",
+      "Bash(python3 -c ' *)",
+      "Bash(cd /tmp)",
+      "Bash(tar -xzf \"c:/aicompensa/comparador-precos \\(1\\).tar.gz\" --strip-components=1 -C .)",
+      "PowerShell(tar -tzf \"c:\\\\aicompensa\\\\comparador-precos \\(1\\).tar.gz\" 2>$null | Where-Object { $_ -notmatch \"^\\\\./\\(\\\\.cache|node_modules\\)\" } | Where-Object { $_ -match \"\\\\.\\(ts|tsx|js|json|yaml\\)$\" } | Select-Object -First 200)",
+      "PowerShell(tar -xzf \"c:\\\\aicompensa\\\\comparador-precos \\(1\\).tar.gz\" -O ./artifacts/api-server/src/routes/index.ts 2>$null)",
+      "Bash(git ls-remote *)",
+      "Bash(git ls-tree *)",
+      "PowerShell(git clone https://github.com/alexandradedetran-droid/aicompensa-oficial C:\\\\aicompensa-oficial 2>&1)",
+      "Read(//c/aicompensa-oficial/**)",
+      "Read(//c/aicompensa-oficial/lib/db/**)",
+      "PowerShell($env:PATH = \"C:\\\\Program Files\\\\Git\\\\bin;C:\\\\Program Files\\\\Git\\\\usr\\\\bin;\" + $env:PATH; cd C:\\\\aicompensa-oficial; echo y | pnpm install 2>&1 | Select-Object -Last 25)",
+      "PowerShell($env:PATH = \"C:\\\\Program Files\\\\Git\\\\bin;C:\\\\Program Files\\\\Git\\\\usr\\\\bin;\" + $env:PATH; $env:DATABASE_URL = \"postgresql://postgres:postgres@localhost:5432/aicompensa\"; cd C:\\\\aicompensa-oficial\\\\lib\\\\db; node_modules\\\\.bin\\\\drizzle-kit push --config .\\\\drizzle.config.ts 2>&1)",
+      "PowerShell($env:PATH = \"C:\\\\Program Files\\\\Git\\\\bin;C:\\\\Program Files\\\\Git\\\\usr\\\\bin;\" + $env:PATH; cd C:\\\\aicompensa-oficial\\\\artifacts\\\\api-server; node build.mjs 2>&1 | Select-Object -Last 15)",
+      "PowerShell(Invoke-RestMethod -Uri \"http://localhost:8080/api/health\" -TimeoutSec 5 2>&1)",
+      "Bash(grep -r \"health\\\\|\\\\/health\" C:/aicompensa-oficial/artifacts/api-server/src/routes/ --include=\"*.ts\")",
+      "PowerShell(Invoke-RestMethod -Uri \"http://localhost:8080/healthz\" -TimeoutSec 5 2>&1)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue)",
+      "PowerShell(Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Id \\(Get-NetTCPConnection -LocalPort 8080\\).OwningProcess -Force -ErrorAction SilentlyContinue; Stop-Process -Id \\(Get-NetTCPConnection -LocalPort 5173\\).OwningProcess -Force -ErrorAction SilentlyContinue; Write-Host \"Processos encerrados\"; Start-Sleep -Seconds 1; Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue; Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue)",
+      "PowerShell(Stop-Process -Id \\(Get-NetTCPConnection -LocalPort 8080 -ErrorAction SilentlyContinue\\).OwningProcess -Force -ErrorAction SilentlyContinue; Start-Sleep -Seconds 1; Write-Host \"Porta 8080 liberada\")"
+    ],
+    "additionalDirectories": [
+      "C:\\aicompensa-oficial"
     ]
   }
 }
