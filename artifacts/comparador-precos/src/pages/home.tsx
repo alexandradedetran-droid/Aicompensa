@@ -90,7 +90,7 @@ function Greeting({
           {emoji} {text}
         </p>
         <h1 className="text-white font-black text-lg leading-tight">
-          Economize no mercado
+          Toda compra começa aqui
         </h1>
       </div>
       <button
@@ -501,7 +501,7 @@ function MaisCurtidasCard({
     const text = `🛒 ${oferta.produto} por ${R(oferta.preco)} em ${oferta.mercado}${oferta.bairro ? ` (${oferta.bairro})` : ""}`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: "Comparador de Preços", text, url: window.location.origin });
+        await navigator.share({ title: "AíCompensa", text, url: window.location.origin });
       } else {
         await navigator.clipboard.writeText(`${text}\n${window.location.origin}`);
       }
@@ -1031,11 +1031,11 @@ export default function Home() {
             💰 Ganhar pontos
           </Button>
         </div>
-        <Link href="/lista">
+        <Link href="/listas">
           <div className="w-full h-12 rounded-2xl flex items-center justify-center gap-2 font-bold text-sm cursor-pointer active:scale-[0.98] transition-all"
                style={{ background: "linear-gradient(135deg,#3b0764,#7e22ce)", boxShadow: "0 4px 20px rgba(126,34,206,0.35)" }}>
             <ShoppingCart className="h-4 w-4 text-white" />
-            <span className="text-white">📋 Minha lista de compras</span>
+            <span className="text-white">📋 Compras</span>
           </div>
         </Link>
       </motion.div>

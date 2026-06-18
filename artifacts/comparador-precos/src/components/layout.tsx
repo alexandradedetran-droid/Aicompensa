@@ -47,8 +47,8 @@ export function Layout({ children }: LayoutProps) {
         <div className="container flex h-14 items-center justify-between px-4 sm:px-6 max-w-lg mx-auto">
           <Link href="/" className="flex items-center gap-2 font-black text-lg tracking-tight">
             <span className="text-emerald-400">🛒</span>
-            <span className="text-white">Comparador</span>
-            <span className="text-emerald-400 text-xs font-bold bg-emerald-500/10 border border-emerald-500/30 px-1.5 py-0.5 rounded-full">Beta</span>
+            <span className="text-white">AíCompensa</span>
+            <span className="text-slate-500 text-xs font-bold bg-slate-800 border border-slate-700 px-1.5 py-0.5 rounded-full">Beta</span>
           </Link>
           <nav className="hidden sm:flex items-center gap-5 text-sm font-medium">
             {navItems.filter(i => !i.isMain).map((item) =>
