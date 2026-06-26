@@ -48,7 +48,7 @@ export default function AdminLogin() {
             <span className="text-3xl">🛡️</span>
           </div>
           <h1 className="text-2xl font-black text-white">Painel Admin</h1>
-          <p className="text-sm text-gray-400 mt-1">Comparador de Preços</p>
+          <p className="text-sm text-gray-400 mt-1">AíCompensa</p>
         </div>
 
         {/* Card */}

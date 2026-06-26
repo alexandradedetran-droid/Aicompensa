@@ -565,10 +565,11 @@ export default function ListaDetalhe() {
   const [nome, setNome] = useState(() => isPessoal ? getListaNome() : "Lista");
   const [emoji, setEmoji] = useState(() => isPessoal ? getListaEmoji() : "🛒");
 
-  const { data: ofertas = [], isLoading } = useListOfertas(
+  const { data: feedPage, isLoading } = useListOfertas(
     {},
     { query: { queryKey: getListOfertasQueryKey() } }
   );
+  const ofertas = feedPage?.items ?? [];
 
   // Contextual FAB: switch to itens tab and focus input
   useEffect(() => {

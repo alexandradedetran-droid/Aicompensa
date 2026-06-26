@@ -3,10 +3,18 @@ const STORAGE_KEY = "usuarioAtual";
 export interface CurrentUser {
   id: number;
   nome: string;
-  telefone: string;
-  cpf: string;
+  email: string;
   cidade: string;
   estado: string;
+  pontos?: number;
+  apiToken?: string;
+  isAdmin?: boolean;
+  unlimitedPosts?: boolean;
+  ofertasHoje?: number;
+  limiteDiario?: number | null;
+  semLimite?: boolean;
+  motivoSemLimite?: string | null;
+  colaboradorPioneiro?: boolean;
 }
 
 export function getCurrentUser(): CurrentUser | null {
@@ -28,8 +36,6 @@ export function clearCurrentUser(): void {
   localStorage.removeItem(STORAGE_KEY);
 }
 
-export function maskCPF(cpf: string): string {
-  const d = cpf.replace(/\D/g, "");
-  if (d.length !== 11) return cpf;
-  return `***.***.*${d.slice(8, 9)}-${d.slice(9)}`;
+export function getApiToken(): string | null {
+  return getCurrentUser()?.apiToken ?? null;
 }

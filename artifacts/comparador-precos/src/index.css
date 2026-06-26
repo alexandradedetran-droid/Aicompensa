@@ -5,38 +5,49 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Shell — dark navy */
-  --background: 222 47% 11%;       /* #0f172a */
-  --foreground: 214 32% 91%;       /* #e2e8f0 near-white */
+  /* ── Light shell ───────────────────────────────────────────── */
+  --background: 210 40% 98%;          /* #F8FAFC */
+  --foreground: 222 47% 11%;          /* #0B1023 */
 
-  /* Cards — white, floating on dark shell */
-  --card: 0 0% 100%;               /* #ffffff */
-  --card-foreground: 222 47% 11%;  /* dark text on cards */
+  /* Cards — white on light shell */
+  --card: 0 0% 100%;                  /* #FFFFFF */
+  --card-foreground: 222 47% 11%;     /* #0B1023 */
 
   --popover: 0 0% 100%;
   --popover-foreground: 222 47% 11%;
 
-  /* Primary — vibrant green */
-  --primary: 142 76% 36%;          /* #16a34a */
-  --primary-foreground: 0 0% 100%;
+  /* Primary — gold (AíCompensa brand) */
+  --primary: 43 87% 63%;              /* #F2C14E */
+  --primary-foreground: 222 47% 11%;  /* dark text on gold */
 
-  --secondary: 222 47% 18%;        /* #1e293b */
-  --secondary-foreground: 214 32% 91%;
+  --secondary: 210 20% 96%;           /* #F3F4F6 */
+  --secondary-foreground: 222 47% 11%;
 
-  --muted: 222 47% 18%;
-  --muted-foreground: 215 16% 57%; /* #8896a7 */
+  --muted: 210 20% 96%;               /* #F3F4F6 */
+  --muted-foreground: 220 9% 46%;     /* #6B7280 */
 
-  --accent: 43 96% 56%;
+  --accent: 43 87% 63%;               /* gold */
   --accent-foreground: 222 47% 11%;
 
-  --destructive: 0 84% 60%;
+  --destructive: 0 84% 60%;           /* #EF4444 */
   --destructive-foreground: 0 0% 100%;
 
-  --border: 215 25% 22%;           /* #2a3a4e */
-  --input: 215 25% 22%;
-  --ring: 142 76% 36%;
+  --border: 220 13% 91%;              /* #E5E7EB */
+  --input: 220 13% 91%;
+  --ring: 43 87% 63%;                 /* gold focus ring */
 
-  --radius: 0.75rem;
+  --radius: 1rem;
+
+  /* ── Brand tokens (always available) ─────────────────────── */
+  --brand-gold: #F2C14E;
+  --brand-green: #16A34A;
+  --brand-bg: #F8FAFC;
+  --brand-text: #0B1023;
+  --brand-muted: #6B7280;
+  --brand-card: #FFFFFF;
+  --brand-border: #E5E7EB;
+  --brand-error: #EF4444;
+  --brand-surface: #F3F4F6;
 }
 
 @theme inline {
@@ -71,34 +82,30 @@
   }
 
   html {
-    /* Smooth scroll globally */
     scroll-behavior: smooth;
-    /* Prevent tap highlight on mobile */
     -webkit-tap-highlight-color: transparent;
   }
 
   body {
     @apply bg-background text-foreground;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
     font-feature-settings: "rlig" 1, "calt" 1;
-    /* Prevent overscroll bounce on iOS */
     overscroll-behavior-y: none;
-    /* Optimize text rendering */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* Better touch targets */
   button, a, [role="button"] {
     touch-action: manipulation;
   }
 }
 
-/* ── Scrollbar hiding ─────────────────────────────────────── */
+/* ── Scrollbar hiding ─────────────────────────────────────────────────────── */
 ::-webkit-scrollbar { width: 0; background: transparent; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* ── Premium skeleton animation ─────────────────────────────── */
+/* ── Skeleton animation (light theme) ───────────────────────────────────── */
 @keyframes shimmer {
   0%   { background-position: -200% 0; }
   100% { background-position: 200% 0; }
@@ -107,9 +114,9 @@
 .skeleton-shimmer {
   background: linear-gradient(
     90deg,
-    rgba(30, 41, 59, 0.8) 25%,
-    rgba(51, 65, 85, 0.6) 50%,
-    rgba(30, 41, 59, 0.8) 75%
+    #E5E7EB 25%,
+    #F3F4F6 50%,
+    #E5E7EB 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.8s ease-in-out infinite;
@@ -118,15 +125,15 @@
 .skeleton-shimmer-light {
   background: linear-gradient(
     90deg,
-    rgba(226, 232, 240, 0.6) 25%,
-    rgba(248, 250, 252, 0.9) 50%,
-    rgba(226, 232, 240, 0.6) 75%
+    rgba(229,231,235,.6) 25%,
+    rgba(248,250,252,.9) 50%,
+    rgba(229,231,235,.6) 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.8s ease-in-out infinite;
 }
 
-/* ── Card hover effect ────────────────────────────────────── */
+/* ── Card hover ──────────────────────────────────────────────────────────── */
 .card-hover {
   transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
@@ -134,13 +141,7 @@
   transform: scale(0.985);
 }
 
-/* ── Price highlight pulse ────────────────────────────────── */
-@keyframes price-glow {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.85; }
-}
-
-/* ── Smooth page transitions ──────────────────────────────── */
+/* ── Page enter ──────────────────────────────────────────────────────────── */
 .page-enter {
   animation: page-in 0.2s ease forwards;
 }
@@ -149,9 +150,52 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Focus styles (accessibility) ────────────────────────── */
+/* ── Focus styles ────────────────────────────────────────────────────────── */
 :focus-visible {
-  outline: 2px solid hsl(var(--ring));
+  outline: 2px solid var(--brand-gold);
   outline-offset: 2px;
   border-radius: 8px;
 }
+
+/* ── AíCompensa brand badge system ──────────────────────────────────────── */
+.badge-super-confirmada { background: #F2C14E;           color: #111827; }
+.badge-melhor-preco     { background: #FEF3C7;           color: #92400E;   border: 1.5px solid #FDE68A; }
+.badge-top-economia     { background: #EDE9FE;           color: #6D28D9; }
+.badge-oferta-premium   { background: linear-gradient(135deg,#F2C14E,#E6A817); color: #111827; }
+.badge-confirmada       { background: #DCFCE7;           color: #15803D; }
+.badge-em-alta          { background: #FFF7ED;           color: #C2410C; }
+.badge-expirada         { background: #FEF2F2;           color: #DC2626; }
+
+/* ── Live dot animation ──────────────────────────────────────────────────── */
+@keyframes live-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+.live-dot::before {
+  content: '';
+  display: inline-block;
+  width: 6px; height: 6px;
+  background: #16A34A;
+  border-radius: 50%;
+  margin-right: 5px;
+  animation: live-pulse 1.5s infinite;
+}
+
+/* ── Gold button standard ────────────────────────────────────────────────── */
+.btn-gold {
+  background: #F2C14E;
+  color: #111827;
+  border: none;
+  border-radius: 14px;
+  font-weight: 800;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(242,193,78,.30);
+  transition: opacity 0.15s, transform 0.15s;
+}
+.btn-gold:active { transform: scale(0.97); }
+.btn-gold:disabled { opacity: 0.5; }

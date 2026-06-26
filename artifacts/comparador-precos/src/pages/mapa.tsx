@@ -16,9 +16,9 @@ const BRAZIL_CENTER: [number, number] = [-14.235, -51.9253];
 const BRAZIL_ZOOM = 4;
 
 function priceColor(price: number, min: number, max: number): string {
-  if (max === min) return "#10b981";
+  if (max === min) return "#84cc16";
   const ratio = (price - min) / (max - min);
-  if (ratio < 0.34) return "#10b981";
+  if (ratio < 0.34) return "#84cc16";
   if (ratio < 0.67) return "#f59e0b";
   return "#ef4444";
 }
@@ -146,17 +146,17 @@ function OfertaSheet({
   const valeViagem = distKm != null && distKm > 1 && distKm <= 5 && oferta.validacoes >= 3;
 
   const priceLabel =
-    color === "#10b981"
+    color === "#84cc16"
       ? "🟢 Preço baixo"
       : color === "#f59e0b"
         ? "🟡 Preço médio"
         : "🔴 Preço alto";
 
   const priceTextColor =
-    color === "#10b981" ? "#047857" : color === "#f59e0b" ? "#92400e" : "#b91c1c";
+    color === "#84cc16" ? "#047857" : color === "#f59e0b" ? "#92400e" : "#b91c1c";
 
   const priceBg =
-    color === "#10b981" ? "#d1fae5" : color === "#f59e0b" ? "#fef3c7" : "#fee2e2";
+    color === "#84cc16" ? "#d1fae5" : color === "#f59e0b" ? "#fef3c7" : "#fee2e2";
 
   const rotaUrl =
     oferta.latitude != null && oferta.longitude != null
@@ -255,7 +255,7 @@ function OfertaSheet({
 
             {/* Info */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <p style={{ margin: 0, fontWeight: 800, fontSize: 16, color: "#0f172a", lineHeight: 1.3 }}>
+              <p style={{ margin: 0, fontWeight: 800, fontSize: 16, color: "#130926", lineHeight: 1.3 }}>
                 {oferta.produto}
               </p>
               <p style={{ margin: "4px 0 0", fontWeight: 900, fontSize: 22, color: priceTextColor, lineHeight: 1 }}>
@@ -275,7 +275,7 @@ function OfertaSheet({
               </p>
             )}
             {distLabel && (
-              <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#10b981" }}>
+              <p style={{ margin: 0, fontSize: 13, fontWeight: 700, color: "#84cc16" }}>
                 {distLabel}
               </p>
             )}
@@ -317,7 +317,7 @@ function OfertaSheet({
               onClick={() => setLocation("/ofertas")}
               style={{
                 flex: 1, fontSize: 14, fontWeight: 800,
-                color: "white", background: "#10b981",
+                color: "white", background: "#84cc16",
                 border: "none", padding: "13px 0",
                 borderRadius: 12, cursor: "pointer",
               }}
@@ -332,7 +332,7 @@ function OfertaSheet({
               style={{
                 display: "flex", alignItems: "center", justifyContent: "center", gap: 6,
                 fontSize: 14, fontWeight: 800,
-                color: "white", background: "#1e293b",
+                color: "white", background: "#1d0e36",
                 padding: "13px 18px", borderRadius: 12,
                 textDecoration: "none",
               }}
@@ -357,7 +357,7 @@ export default function Mapa() {
   const [recenterTarget, setRecenterTarget] = useState<[number, number] | null>(null);
   const [selectedOferta, setSelectedOferta] = useState<Oferta | null>(null);
 
-  const ofertas: Oferta[] = (data ?? []).filter(
+  const ofertas: Oferta[] = (data?.items ?? []).filter(
     (o) => o.latitude != null && o.longitude != null && o.status !== "expirada",
   );
 
@@ -405,8 +405,8 @@ export default function Mapa() {
       {/* ── MAP ─────────────────────────────────────────────────────────── */}
       <div style={{ position: "absolute", inset: 0 }}>
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center h-full bg-[#0f172a] gap-3">
-            <Loader2 className="h-8 w-8 text-emerald-400 animate-spin" />
+          <div className="flex flex-col items-center justify-center h-full bg-[#130926] gap-3">
+            <Loader2 className="h-8 w-8 text-lime-400 animate-spin" />
             <span className="text-slate-400 text-sm">Carregando ofertas...</span>
           </div>
         ) : (
@@ -464,7 +464,7 @@ export default function Mapa() {
         {/* ── Offer bottom sheet ───────────────────────────────────────── */}
         <OfertaSheet
           oferta={selectedOferta}
-          color={selectedOferta ? getColor(selectedOferta) : "#10b981"}
+          color={selectedOferta ? getColor(selectedOferta) : "#84cc16"}
           onClose={() => setSelectedOferta(null)}
           userCoords={userCoords}
         />
@@ -490,11 +490,11 @@ export default function Mapa() {
               style={{
                 pointerEvents: "all",
                 display: "flex", alignItems: "center", gap: 8,
-                background: locating ? "#1e293b" : "#10b981",
+                background: locating ? "#1d0e36" : "#84cc16",
                 color: "white", border: "none", borderRadius: 100,
                 padding: "13px 24px", fontWeight: 800, fontSize: 14,
                 cursor: locating ? "not-allowed" : "pointer",
-                boxShadow: "0 8px 32px rgba(16,185,129,0.45)",
+                boxShadow: "0 8px 32px rgba(132,204,22,0.45)",
                 transition: "all 0.2s",
               }}
             >
@@ -511,7 +511,7 @@ export default function Mapa() {
         {locError && (
           <div style={{
             position: "absolute", top: 72, left: 16, right: 16,
-            background: "#1e293b", borderRadius: 12, padding: "10px 14px",
+            background: "#1d0e36", borderRadius: 12, padding: "10px 14px",
             fontSize: 12, color: "#fca5a5", zIndex: 500,
             boxShadow: "0 4px 16px rgba(0,0,0,0.4)", border: "1px solid #ef444440",
           }}>
@@ -536,14 +536,14 @@ export default function Mapa() {
           boxShadow: "0 4px 24px rgba(0,0,0,0.55)",
           border: "1px solid rgba(255,255,255,0.10)",
         }}>
-          <MapPin style={{ width: 14, height: 14, color: "#34d399", flexShrink: 0 }} />
+          <MapPin style={{ width: 14, height: 14, color: "#a3e635", flexShrink: 0 }} />
           <span style={{ fontSize: 13, fontWeight: 700, color: "#f1f5f9", whiteSpace: "nowrap" }}>
             {isLoading
               ? "Carregando..."
               : `${ofertas.length} ${ofertas.length === 1 ? "oferta no mapa" : "ofertas no mapa"}`}
           </span>
           <div style={{ display: "flex", alignItems: "center", gap: 5, marginLeft: 2 }}>
-            {["#10b981", "#f59e0b", "#ef4444"].map((bg) => (
+            {["#84cc16", "#f59e0b", "#ef4444"].map((bg) => (
               <span key={bg} style={{
                 width: 9, height: 9, borderRadius: "50%",
                 background: bg, display: "inline-block", flexShrink: 0,

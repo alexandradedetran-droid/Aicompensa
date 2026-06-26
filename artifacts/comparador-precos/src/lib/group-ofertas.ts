@@ -83,6 +83,33 @@ export function normalizeKey(s: string): string {
 }
 
 /**
+ * Builds a brand-aware grouping key.
+ *
+ * When `marca` is present, we strip it from the product name before normalizing
+ * so that "Ypê Detergente 500ml" and "Detergente Ypê 500ml" produce the same key,
+ * while "Ypê Detergente 500ml" vs "Ypê Amaciante 2L" correctly stay separate.
+ */
+function buildGroupKey(o: Oferta): string {
+  const prodNorm = normalizeKey(o.produto);
+
+  if (o.marca) {
+    const marcaNorm = normalizeKey(o.marca);
+    // Remove brand tokens from the normalized product name
+    const withoutBrand = prodNorm
+      .replace(new RegExp(`\\b${marcaNorm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "g"), "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    // Only use brand-aware key when there's a meaningful product description left
+    if (withoutBrand.length >= 3) {
+      return `${marcaNorm}||${withoutBrand}`;
+    }
+  }
+
+  return prodNorm;
+}
+
+/**
  * Score for ranking / comparing offers within a group.
  * Lower = better.
  * Expired offers are always last (Infinity).
@@ -101,13 +128,18 @@ export interface GrupoOferta {
   ofertas: Oferta[];
   best: Oferta;
   count: number;
+  /** Total number of raw publications before per-market deduplication */
+  totalPublicacoes: number;
   minPreco: number;
   maxPreco: number;
+  avgPreco: number;
   savings: number;
   /** True if the best offer was validated in the last 24 h */
   confirmadoHoje: boolean;
   /** Highest curtidas count in the group */
   maxCurtidas: number;
+  /** Total confirmations across all offers in the group */
+  totalConfirmacoes: number;
 }
 
 export function groupOfertas(ofertas: Oferta[]): GrupoOferta[] {
@@ -115,7 +147,7 @@ export function groupOfertas(ofertas: Oferta[]): GrupoOferta[] {
 
   const map = new Map<string, Oferta[]>();
   for (const o of ofertas) {
-    const key = normalizeKey(o.produto);
+    const key = buildGroupKey(o);
     const arr = map.get(key) ?? [];
     arr.push(o);
     map.set(key, arr);
@@ -124,6 +156,8 @@ export function groupOfertas(ofertas: Oferta[]): GrupoOferta[] {
   const grupos: GrupoOferta[] = [];
 
   for (const [key, arr] of map) {
+    const totalPublicacoes = arr.length;
+
     // De-duplicate by mercado (keep the most validated / most recent)
     const byMercado = new Map<string, Oferta>();
     for (const o of arr) {
@@ -146,7 +180,9 @@ export function groupOfertas(ofertas: Oferta[]): GrupoOferta[] {
     const prices = deduped.map((o) => o.preco);
     const minPreco = Math.min(...prices);
     const maxPreco = Math.max(...prices);
+    const avgPreco = prices.reduce((sum, p) => sum + p, 0) / prices.length;
     const maxCurtidas = Math.max(...deduped.map((o) => o.curtidas));
+    const totalConfirmacoes = deduped.reduce((sum, o) => sum + (o.confirmacoes ?? 0), 0);
 
     const confirmadoHoje = deduped.some((o) => {
       if (!o.ultimaValidacaoEm) return false;
@@ -161,11 +197,14 @@ export function groupOfertas(ofertas: Oferta[]): GrupoOferta[] {
       ofertas: deduped,
       best,
       count: deduped.length,
+      totalPublicacoes,
       minPreco,
       maxPreco,
+      avgPreco,
       savings: maxPreco - minPreco,
       confirmadoHoje,
       maxCurtidas,
+      totalConfirmacoes,
     });
   }
 

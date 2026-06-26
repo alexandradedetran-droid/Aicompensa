@@ -6,7 +6,7 @@ import {
 import { format, formatDistance, isPast, differenceInDays } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { type Oferta } from "@workspace/api-client-react";
-import { CATEGORY_CONFIG, getCategoryUnit } from "@/components/oferta-modal";
+import { CATEGORY_CONFIG, getCategoryUnit, hasPesoVolumeNoNome } from "@/components/oferta-modal";
 import { type GrupoOferta, ofertaCompareScore } from "@/lib/group-ofertas";
 
 const R = (n: number) =>
@@ -22,7 +22,13 @@ function rotaUrl(o: Oferta): string {
 }
 
 const NIVEL_EMOJI: Record<string, string> = {
-  Bronze: "🟤", Prata: "⚪", Ouro: "🟡", Diamante: "💎",
+  "Estagiário da Economia":    "🎒",
+  "Assistente de Ofertas":     "🔎",
+  "Bacharel das Compras":      "🎓",
+  "Especialista das Gôndolas": "🏪",
+  "Mestre das Pechinchas":     "💰",
+  "Doutor da Economia":        "🔬",
+  "PhD do Supermercado":       "🏆",
 };
 
 type StatusKey = "nova" | "validada" | "suspeita" | "expirada";
@@ -99,8 +105,8 @@ export function ComparacaoModal({
   if (!grupo) return null;
 
   const cat = CATEGORY_CONFIG[grupo.categoria] ?? { emoji: "🛒", bg: "#f1f5f9" };
-  const unit = getCategoryUnit(grupo.categoria);
   const { savings, minPreco, maxPreco, count, produto } = grupo;
+  const unit = hasPesoVolumeNoNome(produto) ? "" : getCategoryUnit(grupo.categoria);
   const ofertas = sortedOfertas;
   const savingsPct = maxPreco > 0 ? Math.round((savings / maxPreco) * 100) : 0;
 
@@ -158,7 +164,7 @@ export function ComparacaoModal({
                 Comparação de preços
               </p>
               <h2 style={{
-                margin: 0, fontSize: 18, fontWeight: 900, color: "#0f172a",
+                margin: 0, fontSize: 18, fontWeight: 900, color: "#130926",
                 lineHeight: 1.2, overflow: "hidden",
                 textOverflow: "ellipsis", whiteSpace: "nowrap",
               }}>
@@ -203,7 +209,7 @@ export function ComparacaoModal({
                   flexShrink: 0, padding: "5px 10px", borderRadius: 100,
                   fontSize: 11, fontWeight: 700, cursor: "pointer",
                   border: sortMode === opt.key ? "none" : "1px solid #e2e8f0",
-                  background: sortMode === opt.key ? "#0f172a" : "#f8fafc",
+                  background: sortMode === opt.key ? "#130926" : "#f8fafc",
                   color: sortMode === opt.key ? "white" : "#64748b",
                   transition: "all 0.15s",
                 }}
@@ -224,7 +230,7 @@ export function ComparacaoModal({
           }}>
             <div>
               <p style={{ margin: 0, fontSize: 10, color: "#94a3b8", fontWeight: 600 }}>Menor preço</p>
-              <p style={{ margin: 0, fontSize: 20, fontWeight: 900, color: "#10b981", lineHeight: 1 }}>
+              <p style={{ margin: 0, fontSize: 20, fontWeight: 900, color: "#84cc16", lineHeight: 1 }}>
                 {R(minPreco)}{unit && <span style={{ fontSize: 11 }}>{unit}</span>}
               </p>
             </div>
@@ -232,7 +238,7 @@ export function ComparacaoModal({
               {savings > 0.01 && savingsPct >= 3 && (
                 <>
                   <p style={{ margin: 0, fontSize: 10, color: "#94a3b8", fontWeight: 600 }}>Economia</p>
-                  <p style={{ margin: 0, fontSize: 14, fontWeight: 900, color: "#059669" }}>
+                  <p style={{ margin: 0, fontSize: 14, fontWeight: 900, color: "#65a30d" }}>
                     💰 {R(savings)}
                   </p>
                   <p style={{ margin: 0, fontSize: 9, color: "#16a34a" }}>{savingsPct}% de diferença</p>
@@ -285,7 +291,7 @@ export function ComparacaoModal({
                   {/* Rank */}
                   <div style={{
                     width: 28, height: 28, borderRadius: "50%",
-                    background: isBest ? "#10b981" : "#e2e8f0",
+                    background: isBest ? "#84cc16" : "#e2e8f0",
                     color: isBest ? "white" : "#64748b",
                     fontWeight: 900, fontSize: 13,
                     display: "flex", alignItems: "center", justifyContent: "center",
@@ -297,7 +303,7 @@ export function ComparacaoModal({
                   {/* Store + location + badges */}
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 5, flexWrap: "wrap" }}>
-                      <span style={{ fontWeight: 800, fontSize: 15, color: "#0f172a" }}>
+                      <span style={{ fontWeight: 800, fontSize: 15, color: "#130926" }}>
                         {o.mercado}
                       </span>
                       {isBest && !expired && (
@@ -326,7 +332,7 @@ export function ComparacaoModal({
                   <div style={{ textAlign: "right", flexShrink: 0 }}>
                     <span style={{
                       fontSize: 21, fontWeight: 900,
-                      color: isBest ? "#10b981" : "#0f172a",
+                      color: isBest ? "#84cc16" : "#130926",
                       display: "block", lineHeight: 1,
                     }}>
                       {R(o.preco)}
@@ -349,13 +355,13 @@ export function ComparacaoModal({
                   flexWrap: "wrap", marginBottom: 10, paddingLeft: 38,
                 }}>
                   {o.distancia != null && (
-                    <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 700, color: "#10b981" }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11, fontWeight: 700, color: "#84cc16" }}>
                       <MapPin size={10} />
                       {o.distancia < 1 ? `${Math.round(o.distancia * 1000)} m` : `${o.distancia.toFixed(1)} km`}
                     </span>
                   )}
                   <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11, color: "#64748b" }}>
-                    <CheckCircle size={10} color="#10b981" />
+                    <CheckCircle size={10} color="#84cc16" />
                     {o.validacoes} validações
                   </span>
                   <span style={{ display: "flex", alignItems: "center", gap: 3, fontSize: 11, color: "#64748b" }}>
@@ -392,7 +398,7 @@ export function ComparacaoModal({
                     rel="noopener noreferrer"
                     style={{
                       padding: "9px 10px", borderRadius: 11,
-                      background: "#0f172a", color: "white",
+                      background: "#130926", color: "white",
                       fontWeight: 700, fontSize: 11,
                       textDecoration: "none",
                       display: "flex", alignItems: "center", justifyContent: "center", gap: 4,
@@ -409,7 +415,7 @@ export function ComparacaoModal({
                     disabled={isValidating || expired}
                     style={{
                       flex: 2, padding: "9px 0", borderRadius: 11,
-                      background: expired ? "#e2e8f0" : "#10b981",
+                      background: expired ? "#e2e8f0" : "#84cc16",
                       color: expired ? "#94a3b8" : "white",
                       border: "none", fontWeight: 700, fontSize: 11,
                       cursor: expired || isValidating ? "not-allowed" : "pointer",

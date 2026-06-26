@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { motion } from "framer-motion";
 import { useCreateUsuario } from "@workspace/api-client-react";
@@ -10,68 +10,76 @@ const ESTADOS = [
   "RS","RO","RR","SC","SP","SE","TO",
 ];
 
-function maskTelefone(v: string): string {
-  const d = v.replace(/\D/g, "").slice(0, 11);
-  if (d.length === 0) return "";
-  if (d.length <= 2) return `(${d}`;
-  if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
-  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-}
-
-function maskCPFInput(v: string): string {
-  const d = v.replace(/\D/g, "").slice(0, 11);
-  if (d.length <= 3) return d;
-  if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
-  if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
-  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
-}
-
-function validateCPF(cpf: string): boolean {
-  const d = cpf.replace(/\D/g, "");
-  if (d.length !== 11) return false;
-  if (/^(\d)\1+$/.test(d)) return false;
-  let sum = 0;
-  for (let i = 0; i < 9; i++) sum += parseInt(d[i]) * (10 - i);
-  let r = (sum * 10) % 11;
-  if (r === 10 || r === 11) r = 0;
-  if (r !== parseInt(d[9])) return false;
-  sum = 0;
-  for (let i = 0; i < 10; i++) sum += parseInt(d[i]) * (11 - i);
-  r = (sum * 10) % 11;
-  if (r === 10 || r === 11) r = 0;
-  return r === parseInt(d[10]);
-}
-
 interface FormState {
   nome: string;
-  telefone: string;
-  cpf: string;
+  email: string;
+  senha: string;
+  confirmarSenha: string;
   cidade: string;
   estado: string;
+  codigoIndicacao: string;
 }
 
 interface FormErrors {
   nome?: string;
-  telefone?: string;
-  cpf?: string;
+  email?: string;
+  senha?: string;
+  confirmarSenha?: string;
   cidade?: string;
   estado?: string;
 }
 
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function AiLogo({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 40 40" fill="none" className={className}>
+      <path d="M20 5L4 35" stroke="url(#cadLg)" strokeWidth="5.5" strokeLinecap="round"/>
+      <path d="M20 5L36 35" stroke="url(#cadLg)" strokeWidth="5.5" strokeLinecap="round"/>
+      <circle cx="20" cy="26" r="4" fill="#F2C14E"/>
+      <defs>
+        <linearGradient id="cadLg" x1="20" y1="5" x2="20" y2="35" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#FFD97A"/>
+          <stop offset="1" stopColor="#D4A017"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  );
+}
+
 export default function Cadastro() {
   const [, setLocation] = useLocation();
-  const [form, setForm] = useState<FormState>({ nome: "", telefone: "", cpf: "", cidade: "", estado: "" });
+  const [form, setForm] = useState<FormState>({
+    nome: "", email: "", senha: "", confirmarSenha: "", cidade: "", estado: "", codigoIndicacao: "",
+  });
   const [errors, setErrors] = useState<FormErrors>({});
   const [serverError, setServerError] = useState("");
+  const [showSenha, setShowSenha] = useState(false);
+  const [showConfirmar, setShowConfirmar] = useState(false);
+  const [showCodigoField, setShowCodigoField] = useState(false);
+
+  useEffect(() => {
+    const ref = new URLSearchParams(window.location.search).get("ref");
+    if (ref) {
+      setForm((f) => ({ ...f, codigoIndicacao: ref.trim().toUpperCase() }));
+      setShowCodigoField(true);
+    }
+  }, []);
 
   const { mutate: createUsuario, isPending } = useCreateUsuario();
 
+  function set(field: keyof FormState, value: string) {
+    setForm((f) => ({ ...f, [field]: value }));
+    setErrors((e) => ({ ...e, [field]: undefined }));
+    setServerError("");
+  }
+
   function validate(): boolean {
     const e: FormErrors = {};
-    if (form.nome.trim().length < 5) e.nome = "Nome deve ter pelo menos 5 caracteres.";
-    const telDigits = form.telefone.replace(/\D/g, "");
-    if (telDigits.length !== 11) e.telefone = "Telefone deve ter 11 dígitos, incluindo DDD.";
-    if (!validateCPF(form.cpf)) e.cpf = "CPF inválido. Verifique os dígitos.";
+    if (form.nome.trim().length < 3) e.nome = "Nome deve ter pelo menos 3 caracteres.";
+    if (!EMAIL_RE.test(form.email.trim())) e.email = "Digite um e-mail válido.";
+    if (form.senha.length < 6) e.senha = "Senha deve ter pelo menos 6 caracteres.";
+    if (form.senha !== form.confirmarSenha) e.confirmarSenha = "As senhas não coincidem.";
     if (!form.cidade.trim()) e.cidade = "Cidade é obrigatória.";
     if (!form.estado) e.estado = "Estado é obrigatório.";
     setErrors(e);
@@ -87,10 +95,11 @@ export default function Cadastro() {
       {
         data: {
           nome: form.nome.trim(),
-          telefone: form.telefone.replace(/\D/g, ""),
-          cpf: form.cpf.replace(/\D/g, ""),
+          email: form.email.trim().toLowerCase(),
+          senha: form.senha,
           cidade: form.cidade.trim(),
           estado: form.estado,
+          ...(form.codigoIndicacao.trim() ? { codigoIndicacao: form.codigoIndicacao.trim().toUpperCase() } : {}),
         },
       },
       {
@@ -98,21 +107,21 @@ export default function Cadastro() {
           setCurrentUser({
             id: user.id,
             nome: user.nome,
-            telefone: user.telefone,
-            cpf: user.cpf,
+            email: user.email,
             cidade: user.cidade,
             estado: user.estado,
+            apiToken: user.apiToken ?? undefined,
+            isAdmin: user.isAdmin ?? false,
           });
           const returnTo = sessionStorage.getItem("loginReturnTo");
           sessionStorage.removeItem("loginReturnTo");
           setLocation(returnTo ?? "/");
         },
         onError: (err: unknown) => {
-          const msg = (err as { response?: { data?: { error?: string } } })?.response?.data?.error;
-          if (msg?.includes("CPF já cadastrado")) {
-            setErrors((prev) => ({ ...prev, cpf: "CPF já cadastrado. Tente outro." }));
-          } else if (msg?.includes("Telefone já cadastrado")) {
-            setErrors((prev) => ({ ...prev, telefone: "Telefone já cadastrado. Tente outro." }));
+          const data = (err as { data?: { error?: string } })?.data;
+          const msg = data?.error;
+          if (msg?.includes("e-mail")) {
+            setErrors((prev) => ({ ...prev, email: msg }));
           } else {
             setServerError(msg ?? "Erro ao criar conta. Tente novamente.");
           }
@@ -121,8 +130,14 @@ export default function Cadastro() {
     );
   }
 
+  const inputCls = (field: keyof FormErrors) =>
+    `w-full text-white placeholder-slate-600 rounded-xl px-4 py-3 text-sm outline-none border transition-colors ${
+      errors[field] ? "border-red-500" : ""
+    }`;
+
   return (
-    <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4"
+         style={{ background: "linear-gradient(160deg, #1a0933 0%, #130926 60%, #0d0620 100%)" }}>
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
@@ -131,14 +146,18 @@ export default function Cadastro() {
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-emerald-500 shadow-lg mb-4">
-            <span className="text-3xl">🛒</span>
+          <div className="inline-flex items-center justify-center h-20 w-20 rounded-3xl mb-4"
+               style={{ background: "linear-gradient(135deg, #1e0d38, #2d1262)", boxShadow: "0 8px 32px rgba(242,193,78,0.2)" }}>
+            <AiLogo className="h-12 w-12" />
           </div>
-          <h1 className="text-white text-2xl font-black">Comparador de Preços</h1>
-          <p className="text-slate-400 text-sm mt-1">Crie sua conta para começar</p>
+          <h1 className="text-2xl font-black">
+            <span style={{ color: "#F2C14E" }}>ai</span><span className="text-white">compens</span><span style={{ color: "#F2C14E" }}>a</span>
+          </h1>
+          <p className="text-slate-400 text-sm mt-1">Crie sua conta e comece a economizar</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="bg-[#1e293b] rounded-3xl p-6 space-y-4 shadow-xl">
+        <form onSubmit={handleSubmit} className="rounded-3xl p-6 space-y-4 shadow-xl"
+              style={{ background: "#1d0e36", border: "1px solid rgba(58,24,103,0.5)" }}>
           <h2 className="text-white font-bold text-lg mb-1">Criar conta</h2>
 
           {serverError && (
@@ -150,57 +169,84 @@ export default function Cadastro() {
           {/* Nome */}
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-              Nome completo <span className="text-red-400">*</span>
+              Nome <span className="text-red-400">*</span>
             </label>
             <input
               type="text"
-              placeholder="Ex: João da Silva"
+              autoComplete="name"
+              placeholder="Ex: João Silva"
               value={form.nome}
-              onChange={(e) => {
-                setForm((f) => ({ ...f, nome: e.target.value }));
-                if (errors.nome) setErrors((er) => ({ ...er, nome: undefined }));
-              }}
-              className={`w-full bg-[#0f172a] text-white placeholder-slate-600 rounded-xl px-4 py-3 text-sm outline-none border ${errors.nome ? "border-red-500" : "border-[#334155] focus:border-emerald-500"} transition-colors`}
+              onChange={(e) => set("nome", e.target.value)}
+              className={inputCls("nome")}
+              style={{ background: "#130926", borderColor: errors.nome ? undefined : "#3a1867" }}
             />
             {errors.nome && <p className="text-red-400 text-xs mt-1">{errors.nome}</p>}
           </div>
 
-          {/* Telefone */}
+          {/* E-mail */}
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-              Telefone (com DDD) <span className="text-red-400">*</span>
+              E-mail <span className="text-red-400">*</span>
             </label>
             <input
-              type="tel"
-              inputMode="numeric"
-              placeholder="(11) 99999-9999"
-              value={form.telefone}
-              onChange={(e) => {
-                setForm((f) => ({ ...f, telefone: maskTelefone(e.target.value) }));
-                if (errors.telefone) setErrors((er) => ({ ...er, telefone: undefined }));
-              }}
-              className={`w-full bg-[#0f172a] text-white placeholder-slate-600 rounded-xl px-4 py-3 text-sm outline-none border ${errors.telefone ? "border-red-500" : "border-[#334155] focus:border-emerald-500"} transition-colors`}
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              placeholder="seu@email.com"
+              value={form.email}
+              onChange={(e) => set("email", e.target.value)}
+              className={inputCls("email")}
+              style={{ background: "#130926", borderColor: errors.email ? undefined : "#3a1867" }}
             />
-            {errors.telefone && <p className="text-red-400 text-xs mt-1">{errors.telefone}</p>}
+            {errors.email && <p className="text-red-400 text-xs mt-1">{errors.email}</p>}
           </div>
 
-          {/* CPF */}
+          {/* Senha */}
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-              CPF <span className="text-red-400">*</span>
+              Senha <span className="text-red-400">*</span>
             </label>
-            <input
-              type="text"
-              inputMode="numeric"
-              placeholder="000.000.000-00"
-              value={form.cpf}
-              onChange={(e) => {
-                setForm((f) => ({ ...f, cpf: maskCPFInput(e.target.value) }));
-                if (errors.cpf) setErrors((er) => ({ ...er, cpf: undefined }));
-              }}
-              className={`w-full bg-[#0f172a] text-white placeholder-slate-600 rounded-xl px-4 py-3 text-sm outline-none border ${errors.cpf ? "border-red-500" : "border-[#334155] focus:border-emerald-500"} transition-colors`}
-            />
-            {errors.cpf && <p className="text-red-400 text-xs mt-1">{errors.cpf}</p>}
+            <div className="relative">
+              <input
+                type={showSenha ? "text" : "password"}
+                autoComplete="new-password"
+                placeholder="Mínimo 6 caracteres"
+                value={form.senha}
+                onChange={(e) => set("senha", e.target.value)}
+                className={inputCls("senha") + " pr-12"}
+                style={{ background: "#130926", borderColor: errors.senha ? undefined : "#3a1867" }}
+              />
+              <button type="button" onClick={() => setShowSenha((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors text-lg"
+                tabIndex={-1}>
+                {showSenha ? "🙈" : "👁️"}
+              </button>
+            </div>
+            {errors.senha && <p className="text-red-400 text-xs mt-1">{errors.senha}</p>}
+          </div>
+
+          {/* Confirmar Senha */}
+          <div>
+            <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+              Confirmar senha <span className="text-red-400">*</span>
+            </label>
+            <div className="relative">
+              <input
+                type={showConfirmar ? "text" : "password"}
+                autoComplete="new-password"
+                placeholder="Repita a senha"
+                value={form.confirmarSenha}
+                onChange={(e) => set("confirmarSenha", e.target.value)}
+                className={inputCls("confirmarSenha") + " pr-12"}
+                style={{ background: "#130926", borderColor: errors.confirmarSenha ? undefined : "#3a1867" }}
+              />
+              <button type="button" onClick={() => setShowConfirmar((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors text-lg"
+                tabIndex={-1}>
+                {showConfirmar ? "🙈" : "👁️"}
+              </button>
+            </div>
+            {errors.confirmarSenha && <p className="text-red-400 text-xs mt-1">{errors.confirmarSenha}</p>}
           </div>
 
           {/* Cidade */}
@@ -210,13 +256,12 @@ export default function Cadastro() {
             </label>
             <input
               type="text"
+              autoComplete="address-level2"
               placeholder="Ex: São Paulo"
               value={form.cidade}
-              onChange={(e) => {
-                setForm((f) => ({ ...f, cidade: e.target.value }));
-                if (errors.cidade) setErrors((er) => ({ ...er, cidade: undefined }));
-              }}
-              className={`w-full bg-[#0f172a] text-white placeholder-slate-600 rounded-xl px-4 py-3 text-sm outline-none border ${errors.cidade ? "border-red-500" : "border-[#334155] focus:border-emerald-500"} transition-colors`}
+              onChange={(e) => set("cidade", e.target.value)}
+              className={inputCls("cidade")}
+              style={{ background: "#130926", borderColor: errors.cidade ? undefined : "#3a1867" }}
             />
             {errors.cidade && <p className="text-red-400 text-xs mt-1">{errors.cidade}</p>}
           </div>
@@ -228,27 +273,65 @@ export default function Cadastro() {
             </label>
             <select
               value={form.estado}
-              onChange={(e) => {
-                setForm((f) => ({ ...f, estado: e.target.value }));
-                if (errors.estado) setErrors((er) => ({ ...er, estado: undefined }));
-              }}
-              className={`w-full bg-[#0f172a] text-white rounded-xl px-4 py-3 text-sm outline-none border ${errors.estado ? "border-red-500" : "border-[#334155] focus:border-emerald-500"} transition-colors appearance-none`}
+              onChange={(e) => set("estado", e.target.value)}
+              className={inputCls("estado") + " appearance-none"}
+              style={{ background: "#130926", borderColor: errors.estado ? undefined : "#3a1867" }}
             >
-              <option value="" className="text-slate-500">Selecione um estado</option>
+              <option value="">Selecione</option>
               {ESTADOS.map((uf) => (
-                <option key={uf} value={uf} className="text-white bg-[#1e293b]">{uf}</option>
+                <option key={uf} value={uf} className="text-white bg-[#1d0e36]">{uf}</option>
               ))}
             </select>
             {errors.estado && <p className="text-red-400 text-xs mt-1">{errors.estado}</p>}
           </div>
 
+          {/* Código de indicação */}
+          {!showCodigoField ? (
+            <button
+              type="button"
+              onClick={() => setShowCodigoField(true)}
+              className="text-xs font-semibold text-slate-500 hover:text-slate-300 transition-colors w-full text-left"
+            >
+              🎁 Tenho um código de indicação
+            </button>
+          ) : (
+            <div>
+              <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                Código de indicação <span className="text-slate-600 font-normal normal-case">(opcional)</span>
+              </label>
+              <input
+                type="text"
+                autoComplete="off"
+                placeholder="Ex: ABC123"
+                value={form.codigoIndicacao}
+                onChange={(e) => set("codigoIndicacao", e.target.value.toUpperCase())}
+                maxLength={8}
+                className="w-full text-white placeholder-slate-600 rounded-xl px-4 py-3 text-sm outline-none border transition-colors tracking-widest font-bold"
+                style={{ background: "#130926", borderColor: "#3a1867" }}
+              />
+              <p className="text-slate-600 text-[11px] mt-1">Quem te convidou recebe +100 pontos 🎉</p>
+            </div>
+          )}
+
           <button
             type="submit"
             disabled={isPending}
-            className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-60 disabled:cursor-not-allowed text-white font-black rounded-2xl py-4 text-base transition-colors mt-2"
+            className="w-full font-black rounded-2xl py-4 text-base transition-all disabled:opacity-60 disabled:cursor-not-allowed mt-2"
+            style={{ background: "linear-gradient(135deg, #F2C14E, #D4A017)", color: "#130926" }}
           >
-            {isPending ? "Criando conta..." : "Cadastrar"}
+            {isPending ? "Criando conta..." : "Criar conta"}
           </button>
+
+          <div className="text-center pt-1">
+            <button
+              type="button"
+              onClick={() => setLocation("/login")}
+              className="text-sm font-semibold transition-colors"
+              style={{ color: "#F2C14E" }}
+            >
+              ← Já tenho conta
+            </button>
+          </div>
 
           <p className="text-center text-xs text-slate-500">
             Seus dados ficam seguros e não são compartilhados.

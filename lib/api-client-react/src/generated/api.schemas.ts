@@ -22,12 +22,69 @@ export type OfertaNivelUsuario =
   (typeof OfertaNivelUsuario)[keyof typeof OfertaNivelUsuario];
 
 export const OfertaNivelUsuario = {
-  Iniciante: "Iniciante",
-  Explorador: "Explorador",
-  Caçador: "Caçador",
-  Especialista: "Especialista",
-  Mestre: "Mestre",
-  Lenda: "Lenda",
+  Estagiário_da_Economia: "Estagiário da Economia",
+  Assistente_de_Ofertas: "Assistente de Ofertas",
+  Bacharel_das_Compras: "Bacharel das Compras",
+  Especialista_das_Gôndolas: "Especialista das Gôndolas",
+  Mestre_das_Pechinchas: "Mestre das Pechinchas",
+  Doutor_da_Economia: "Doutor da Economia",
+  PhD_do_Supermercado: "PhD do Supermercado",
+} as const;
+
+/**
+ * Source type of the offer. presencial=in-store photo, encarte=folder/flyer.
+ */
+export type OfertaTipoOrigem =
+  (typeof OfertaTipoOrigem)[keyof typeof OfertaTipoOrigem];
+
+export const OfertaTipoOrigem = {
+  presencial: "presencial",
+  encarte: "encarte",
+  organica: "organica",
+  admin: "admin",
+  importada: "importada",
+  recorrente: "recorrente",
+  patrocinada_externa: "patrocinada_externa",
+  galeria: "galeria",
+  camera: "camera",
+} as const;
+
+export type OfertaValidityLabel =
+  (typeof OfertaValidityLabel)[keyof typeof OfertaValidityLabel];
+
+export const OfertaValidityLabel = {
+  Recém_confirmada: "Recém confirmada",
+  Ativa: "Ativa",
+  Expirando: "Expirando",
+  Possivelmente_expirada: "Possivelmente expirada",
+  Desatualizada: "Desatualizada",
+} as const;
+
+/**
+ * Human-readable confidence label derived from quality and reports.
+ */
+export type OfertaConfiancaLabel =
+  (typeof OfertaConfiancaLabel)[keyof typeof OfertaConfiancaLabel];
+
+export const OfertaConfiancaLabel = {
+  Alta_confiança: "Alta confiança",
+  Confiável: "Confiável",
+  Questionável: "Questionável",
+  Aguardando_validação: "Aguardando validação",
+  Nova: "Nova",
+} as const;
+
+/**
+ * User lifecycle status. null = ativa.
+ */
+export type OfertaStatusUsuario =
+  | (typeof OfertaStatusUsuario)[keyof typeof OfertaStatusUsuario]
+  | null;
+
+export const OfertaStatusUsuario = {
+  encerrada: "encerrada",
+  excluida: "excluida",
+  pode_ter_acabado: "pode_ter_acabado",
 } as const;
 
 export interface Oferta {
@@ -40,7 +97,6 @@ export interface Oferta {
   bairro?: string | null;
   cidade?: string | null;
   fotoUrl?: string | null;
-  imagemExibicao?: string | null;
   validade?: string | null;
   latitude?: number | null;
   longitude?: number | null;
@@ -61,6 +117,185 @@ export interface Oferta {
   ultimaConfirmacaoEm?: string | null;
   /** Present only in POST /ofertas response: true when the submission confirmed an existing offer instead of creating a new one. */
   wasConfirmation?: boolean;
+  /** True when offer has very high community trust (confirmacoes>=3 or validacoes>=5 with no reports). */
+  superOferta: boolean;
+  /** Source type of the offer. presencial=in-store photo, encarte=folder/flyer. */
+  tipoOrigem: OfertaTipoOrigem;
+  /** Unit of measure: kg, g, un, litro, ml, pacote, caixa, fardo */
+  unidade?: string | null;
+  /** Present only in POST /ofertas response for gallery offers: true when the offer is under AI review. */
+  pendente?: boolean;
+  /** IA Admin confidence score 0.00–1.00 for gallery submissions. */
+  iaScore?: number | null;
+  /** IA Admin audit reason. */
+  iaMotivo?: string | null;
+  /** Validity probability 0–100. Decays with age and time since last confirmation, varies by category TTL. */
+  validityScore: number;
+  validityLabel: OfertaValidityLabel;
+  /** Hours since last community confirmation, null if never confirmed. */
+  horasDesdeConfirmacao?: number | null;
+  /** Offer completeness + engagement quality score 0–100. */
+  qualityScore: number;
+  /** Human-readable confidence label derived from quality and reports. */
+  confiancaLabel: OfertaConfiancaLabel;
+  /** Author reliability 0–100 based on their points history. */
+  authorReliability: number;
+  /** User lifecycle status. null = ativa. */
+  statusUsuario?: OfertaStatusUsuario;
+  /** Community 'não encontrei mais' counter. Reaches threshold → pode_ter_acabado. */
+  naoEncontreiMais?: number;
+  /** ISO timestamp when user marked offer as encerrada or excluida. */
+  dataEncerramento?: string | null;
+  /** How many times the owner renewed this offer. Max 3. */
+  renovacoes?: number;
+  /** ISO timestamp of the last renewal. Used to enforce 24 h cooldown. */
+  ultimaRenovacaoEm?: string | null;
+  /** True when offer status is 'suspeita' — appears in feed with yellow badge and 30% rank penalty. Reactivates at 3 community confirmations; expires at 3 denúncias. */
+  emValidacao: boolean;
+  /** Best available image URL. Priority: produtoCatalogo.imagemPremiumUrl → fotoUrl. */
+  imagemExibicao?: string | null;
+  /** Product catalog entry linked to this offer. Null for old offers. */
+  produtoCatalogo?: ProdutoCatalogo | null;
+  /** Price intelligence derived from 30-day offer history. Null when insufficient history (<3 offers). */
+  inteligenciaPreco?: InteligenciaPreco | null;
+}
+
+export type InteligenciaPrecoClassificacao =
+  (typeof InteligenciaPrecoClassificacao)[keyof typeof InteligenciaPrecoClassificacao];
+
+export const InteligenciaPrecoClassificacao = {
+  melhor_preco: "melhor_preco",
+  bom_preco: "bom_preco",
+  preco_normal: "preco_normal",
+  caro: "caro",
+} as const;
+
+/** Price intelligence derived from 30-day offer history for the same product. */
+export interface InteligenciaPreco {
+  precoMedio30d: number;
+  menorPreco30d: number;
+  maiorPreco30d: number;
+  economiaEstimada: number;
+  percentualAbaixoMedia: number;
+  classificacaoPreco: InteligenciaPrecoClassificacao;
+  mensagemPreco: string;
+}
+
+/** Confidence level for a compared offer. */
+export type ComparadorConfiancaNivel =
+  (typeof ComparadorConfiancaNivel)[keyof typeof ComparadorConfiancaNivel];
+
+export const ComparadorConfiancaNivel = {
+  alta: "alta",
+  media: "media",
+  baixa: "baixa",
+} as const;
+
+/** A single offer item returned by the smart comparison endpoint. */
+export interface ComparadorItem {
+  produtoId: string;
+  ofertaId: number;
+  produto: string;
+  preco: number;
+  mercado: string;
+  validade?: string | null;
+  imagemExibicao?: string | null;
+  confiancaScore: number;
+  confiancaNivel: ComparadorConfiancaNivel;
+  motivoConfianca: string;
+}
+
+/** A market group returned by the smart comparison endpoint. */
+export interface ComparadorMercado {
+  nomeMercado: string;
+  total: number;
+  produtosEncontrados: number;
+  produtosFaltando: number;
+  coberturaPercentual: number;
+  confiancaMedia: number;
+  economiaEstimada: number;
+  itens: ComparadorItem[];
+}
+
+/** Best 2-market combination that maximises coverage and savings. */
+export interface ComparadorMelhorCombinacao {
+  mercados: string[];
+  total: number;
+  economiaExtra: number;
+  produtosEncontrados: number;
+  produtosFaltando: number;
+  coberturaPercentual: number;
+  confiancaMedia: number;
+  itensPorMercado: Record<string, ComparadorItem[]>;
+}
+
+/** Full result from POST /api/lista/comparar. */
+export interface ComparadorResult {
+  melhorMercado: ComparadorMercado | null;
+  melhorCombinacao: ComparadorMelhorCombinacao | null;
+  rankingMercados: ComparadorMercado[];
+  /** Number of list items successfully resolved to a catalog produtoId. */
+  produtosResolvidosCount: number;
+  /** Total items submitted. */
+  produtosTotalCount: number;
+}
+
+export interface ProdutoCatalogo {
+  id: string;
+  nome: string;
+  marca?: string | null;
+  categoria?: string | null;
+  /** Premium image URL. Null until admin/AI populates it. */
+  imagemPremiumUrl?: string | null;
+  statusImagem: string;
+}
+
+export type AdminOfertaAuditRisco =
+  (typeof AdminOfertaAuditRisco)[keyof typeof AdminOfertaAuditRisco];
+
+export const AdminOfertaAuditRisco = {
+  baixo: "baixo",
+  medio: "medio",
+  alto: "alto",
+} as const;
+
+export type AdminOfertaAuditSugestaoAcao =
+  (typeof AdminOfertaAuditSugestaoAcao)[keyof typeof AdminOfertaAuditSugestaoAcao];
+
+export const AdminOfertaAuditSugestaoAcao = {
+  manter: "manter",
+  corrigir_categoria: "corrigir_categoria",
+  revisar_preco: "revisar_preco",
+  arquivar: "arquivar",
+  marcar_suspeita: "marcar_suspeita",
+} as const;
+
+export interface AdminOfertaAudit {
+  id: number;
+  ofertaId: number;
+  analisadoEm: string;
+  risco: AdminOfertaAuditRisco;
+  motivo: string;
+  sugestaoAcao: AdminOfertaAuditSugestaoAcao;
+  precoSuspeito: boolean;
+  categoriaErrada: boolean;
+  possivelDuplicada: boolean;
+  fotoRuim: boolean;
+  categoriaSugerida?: string | null;
+  idsDuplicadosSuspeitos?: string | null;
+}
+
+export interface AuditoriaMetricas {
+  totalAnalisadas: number;
+  totalNaoAnalisadas: number;
+  /** audits with risco=alto */
+  precisaAtencao: number;
+  precoSuspeito: number;
+  categoriaErrada: number;
+  possivelDuplicada: number;
+  fotoRuim: number;
+  /** active offers with validade in next 24h */
+  ofertasExpirando: number;
 }
 
 export type AdminOfertaStatus =
@@ -71,18 +306,24 @@ export const AdminOfertaStatus = {
   validada: "validada",
   suspeita: "suspeita",
   expirada: "expirada",
+  pendente_validacao: "pendente_validacao",
+  revisao_manual: "revisao_manual",
+  recusada: "recusada",
+  removida: "removida",
+  arquivada: "arquivada",
 } as const;
 
 export type AdminOfertaNivelUsuario =
   (typeof AdminOfertaNivelUsuario)[keyof typeof AdminOfertaNivelUsuario];
 
 export const AdminOfertaNivelUsuario = {
-  Iniciante: "Iniciante",
-  Explorador: "Explorador",
-  Caçador: "Caçador",
-  Especialista: "Especialista",
-  Mestre: "Mestre",
-  Lenda: "Lenda",
+  Estagiário_da_Economia: "Estagiário da Economia",
+  Assistente_de_Ofertas: "Assistente de Ofertas",
+  Bacharel_das_Compras: "Bacharel das Compras",
+  Especialista_das_Gôndolas: "Especialista das Gôndolas",
+  Mestre_das_Pechinchas: "Mestre das Pechinchas",
+  Doutor_da_Economia: "Doutor da Economia",
+  PhD_do_Supermercado: "PhD do Supermercado",
 } as const;
 
 export interface AdminOferta {
@@ -94,7 +335,7 @@ export interface AdminOferta {
   mercado: string;
   bairro?: string | null;
   cidade?: string | null;
-  fotoUrl?: string | null;
+  hasFoto?: boolean;
   dataCriacao: string;
   curtidas: number;
   validacoes: number;
@@ -106,18 +347,31 @@ export interface AdminOferta {
   nivelUsuario: AdminOfertaNivelUsuario;
   destacada: boolean;
   patrocinada: boolean;
+  tipoOrigem?: string;
+  iaScore?: number | null;
+  iaMotivo?: string | null;
+  iaAnaliseEm?: string | null;
+  /** ISO date string, null when user did not set expiry */
+  validade?: string | null;
+  /** true when offer passes all public feed filters */
+  visivelFeed: boolean;
+  /** Human-readable reason why offer is hidden from public feed, null when visible */
+  motivoBloqueio?: string | null;
+  /** Latest AI audit result for this offer, null if never analyzed */
+  auditoria?: AdminOfertaAudit | null;
 }
 
 export type AdminUsuarioNivel =
   (typeof AdminUsuarioNivel)[keyof typeof AdminUsuarioNivel];
 
 export const AdminUsuarioNivel = {
-  Iniciante: "Iniciante",
-  Explorador: "Explorador",
-  Caçador: "Caçador",
-  Especialista: "Especialista",
-  Mestre: "Mestre",
-  Lenda: "Lenda",
+  Estagiário_da_Economia: "Estagiário da Economia",
+  Assistente_de_Ofertas: "Assistente de Ofertas",
+  Bacharel_das_Compras: "Bacharel das Compras",
+  Especialista_das_Gôndolas: "Especialista das Gôndolas",
+  Mestre_das_Pechinchas: "Mestre das Pechinchas",
+  Doutor_da_Economia: "Doutor da Economia",
+  PhD_do_Supermercado: "PhD do Supermercado",
 } as const;
 
 export interface AdminUsuario {
@@ -127,6 +381,72 @@ export interface AdminUsuario {
   nivel: AdminUsuarioNivel;
   totalOfertas: number;
   bloqueado: boolean;
+  suspensoAte?: string | null;
+  motivoPunicao?: string | null;
+  removido: boolean;
+  removidoEm?: string | null;
+  email?: string | null;
+  telefone?: string | null;
+  ultimoLoginEm?: string | null;
+  ofertasHoje: number;
+  limiteDiario?: number | null;
+  isAdmin: boolean;
+  unlimitedPosts: boolean;
+  semLimite: boolean;
+  motivoSemLimite?: string | null;
+  colaboradorPioneiro: boolean;
+  fundadorId?: number | null;
+}
+
+export interface AdminOfertaPage {
+  items: AdminOferta[];
+  nextCursor: number | null;
+  hasMore: boolean;
+  totalApprox: number;
+}
+
+export interface AdminUsuarioPage {
+  items: AdminUsuario[];
+  nextCursor: number | null;
+  hasMore: boolean;
+  totalApprox: number;
+}
+
+export interface AdminLog {
+  id: number;
+  adminNome: string;
+  acao: string;
+  usuarioAfetadoId?: number | null;
+  usuarioAfetadoNome?: string | null;
+  detalhes?: string | null;
+  motivo?: string | null;
+  criadoEm: string;
+}
+
+export type SuspenderUsuarioBodyDuracao =
+  (typeof SuspenderUsuarioBodyDuracao)[keyof typeof SuspenderUsuarioBodyDuracao];
+
+export const SuspenderUsuarioBodyDuracao = {
+  "24h": "24h",
+  "7d": "7d",
+  "30d": "30d",
+} as const;
+
+export type SuspenderUsuarioBodyMotivo =
+  (typeof SuspenderUsuarioBodyMotivo)[keyof typeof SuspenderUsuarioBodyMotivo];
+
+export const SuspenderUsuarioBodyMotivo = {
+  spam: "spam",
+  fake: "fake",
+  abuso: "abuso",
+  fraude: "fraude",
+  outro: "outro",
+} as const;
+
+export interface SuspenderUsuarioBody {
+  duracao: SuspenderUsuarioBodyDuracao;
+  motivo: SuspenderUsuarioBodyMotivo;
+  detalhe?: string | null;
 }
 
 export interface AdminStats {
@@ -136,12 +456,48 @@ export interface AdminStats {
   totalDenuncias: number;
   totalValidacoes: number;
   totalUsuarios: number;
+  totalIndicacoes?: number;
+}
+
+export interface UpdateOfertaBody {
+  preco?: number;
+  produto?: string;
+  categoria?: string;
+  marca?: string | null;
+  mercado?: string;
+  bairro?: string | null;
+  cidade?: string | null;
+  fotoUrl?: string | null;
+  validade?: string | null;
+  unidade?: string | null;
+}
+
+export interface OfertaHistoricoEntry {
+  id: number;
+  acao: string;
+  statusAntes?: string | null;
+  statusDepois?: string | null;
+  detalhe?: string | null;
+  criadoEm: string;
+  usuarioNome?: string | null;
 }
 
 export interface ActionBody {
-  /** ID of the authenticated user performing the action */
-  usuarioId: number;
+  [key: string]: unknown;
 }
+
+export type CreateOfertaBodyTipoOrigem =
+  | (typeof CreateOfertaBodyTipoOrigem)[keyof typeof CreateOfertaBodyTipoOrigem]
+  | null;
+
+export const CreateOfertaBodyTipoOrigem = {
+  presencial: "presencial",
+  encarte: "encarte",
+  camera: "camera",
+  galeria: "galeria",
+  manual: "manual",
+  organica: "organica",
+} as const;
 
 export interface CreateOfertaBody {
   produto: string;
@@ -155,7 +511,9 @@ export interface CreateOfertaBody {
   validade?: string | null;
   latitude?: number | null;
   longitude?: number | null;
-  usuarioId: number;
+  tipoOrigem?: CreateOfertaBodyTipoOrigem;
+  /** Unit of measure: kg, g, un, litro, ml, pacote, caixa, fardo */
+  unidade?: string | null;
 }
 
 export interface Usuario {
@@ -168,12 +526,13 @@ export type UsuarioRankingNivel =
   (typeof UsuarioRankingNivel)[keyof typeof UsuarioRankingNivel];
 
 export const UsuarioRankingNivel = {
-  Iniciante: "Iniciante",
-  Explorador: "Explorador",
-  Caçador: "Caçador",
-  Especialista: "Especialista",
-  Mestre: "Mestre",
-  Lenda: "Lenda",
+  Estagiário_da_Economia: "Estagiário da Economia",
+  Assistente_de_Ofertas: "Assistente de Ofertas",
+  Bacharel_das_Compras: "Bacharel das Compras",
+  Especialista_das_Gôndolas: "Especialista das Gôndolas",
+  Mestre_das_Pechinchas: "Mestre das Pechinchas",
+  Doutor_da_Economia: "Doutor da Economia",
+  PhD_do_Supermercado: "PhD do Supermercado",
 } as const;
 
 export interface UsuarioRanking {
@@ -192,7 +551,6 @@ export interface Alerta {
 }
 
 export interface CreateAlertaBody {
-  usuarioId: number;
   produto: string;
   precoAlvo: number;
 }
@@ -214,37 +572,64 @@ export interface AlertaMatchResult {
 }
 
 export interface LoginBody {
-  cpf: string;
-  telefone: string;
+  email: string;
+  senha: string;
 }
 
 export interface CreateUsuarioBody {
   nome: string;
-  telefone: string;
-  cpf: string;
+  email: string;
+  senha: string;
   cidade: string;
   estado: string;
+  codigoIndicacao?: string;
 }
 
 export interface UsuarioCriado {
   id: number;
   nome: string;
-  telefone: string;
-  cpf: string;
+  email: string;
   cidade: string;
   estado: string;
   pontos: number;
+  /** Bearer token for Authorization header. Store securely in localStorage. */
+  apiToken: string;
+  /** Whether this user has super admin access to the admin panel. */
+  isAdmin: boolean;
+  /** Number of organic offers published today (BRT timezone) */
+  ofertasHoje: number;
+  /** Daily publish limit for current level. null = unlimited */
+  limiteDiario?: number | null;
+  /** Whether user has manually granted unlimited daily publishes */
+  unlimitedPosts: boolean;
+  /** Whether user has unlimited daily publishes (Admin, PhD, Pioneiro, or manual) */
+  semLimite: boolean;
+  /** Human-readable reason for unlimited status: Admin, Manual, Colaborador Pioneiro, or PhD do Supermercado */
+  motivoSemLimite?: string | null;
+  /** Whether user is a Colaborador Pioneiro (unlimited daily publishes) */
+  colaboradorPioneiro: boolean;
 }
 
 export type PerfilNivel = (typeof PerfilNivel)[keyof typeof PerfilNivel];
 
 export const PerfilNivel = {
+  Estagiário_da_Economia: "Estagiário da Economia",
+  Assistente_de_Ofertas: "Assistente de Ofertas",
+  Bacharel_das_Compras: "Bacharel das Compras",
+  Especialista_das_Gôndolas: "Especialista das Gôndolas",
+  Mestre_das_Pechinchas: "Mestre das Pechinchas",
+  Doutor_da_Economia: "Doutor da Economia",
+  PhD_do_Supermercado: "PhD do Supermercado",
+} as const;
+
+export type PerfilNivelConfiabilidade =
+  (typeof PerfilNivelConfiabilidade)[keyof typeof PerfilNivelConfiabilidade];
+
+export const PerfilNivelConfiabilidade = {
   Iniciante: "Iniciante",
-  Explorador: "Explorador",
-  Caçador: "Caçador",
-  Especialista: "Especialista",
-  Mestre: "Mestre",
-  Lenda: "Lenda",
+  Confiável: "Confiável",
+  Super_Colaborador: "Super Colaborador",
+  Elite: "Elite",
 } as const;
 
 export interface Perfil {
@@ -255,9 +640,21 @@ export interface Perfil {
   streak: number;
   totalOfertas: number;
   totalValidacoesRecebidas: number;
+  totalConfirmacoesRecebidas: number;
+  totalDenunciasRecebidas: number;
+  distinctMercados: number;
+  ofertasSemana: number;
+  /** Trust score 0–100 based on confirmations, validations, denuncias and activity */
+  scoreConfiabilidade: number;
+  nivelConfiabilidade: PerfilNivelConfiabilidade;
+  /** Earned achievement badges */
+  badges: string[];
   telefone?: string | null;
   cidade?: string | null;
   estado?: string | null;
+  codigoIndicacao?: string | null;
+  amigosIndicados?: number;
+  pontosGanhos?: number;
 }
 
 export interface HomeStats {
@@ -287,12 +684,343 @@ export interface EconomiaDiaria {
 }
 
 export interface SaveFavoritoBody {
-  usuarioId: number;
   ofertaId: number;
 }
 
 export interface SuccessResponse {
   ok: boolean;
+}
+
+export interface OfertasFeedResponse {
+  items: Oferta[];
+  /** Pass this as 'cursor' param to fetch the next page. Null when no more pages. */
+  nextCursor: string | null;
+  hasMore: boolean;
+}
+
+export interface FollowsList {
+  /** IDs of followed users */
+  usuarios: number[];
+  /** Names of followed markets */
+  mercados: string[];
+}
+
+export interface FollowMercadoBody {
+  mercado: string;
+}
+
+export type RadarMercadoAtividade =
+  (typeof RadarMercadoAtividade)[keyof typeof RadarMercadoAtividade];
+
+export const RadarMercadoAtividade = {
+  Muito_ativo: "Muito ativo",
+  Ativo: "Ativo",
+  Tranquilo: "Tranquilo",
+} as const;
+
+export interface RadarMercado {
+  mercado: string;
+  bairro?: string | null;
+  cidade?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  totalOfertas: number;
+  ofertasRecentes: number;
+  totalValidacoes: number;
+  totalConfirmacoes: number;
+  menorPreco?: number | null;
+  distancia?: number | null;
+  atividade: RadarMercadoAtividade;
+}
+
+export type RadarResponseAtividadeHorariaItem = {
+  hora: number;
+  total: number;
+};
+
+export type RadarResponseResumo = {
+  totalOfertas: number;
+  ofertasUltimas24h: number;
+  confirmadosHoje: number;
+  menorPreco?: number | null;
+};
+
+export interface RadarResponse {
+  mercados: RadarMercado[];
+  atividadeHoraria: RadarResponseAtividadeHorariaItem[];
+  resumo: RadarResponseResumo;
+}
+
+export interface HeatmapPoint {
+  lat: number;
+  lng: number;
+  weight: number;
+}
+
+export type RegionalInsightsTendenciasItemTendencia =
+  (typeof RegionalInsightsTendenciasItemTendencia)[keyof typeof RegionalInsightsTendenciasItemTendencia];
+
+export const RegionalInsightsTendenciasItemTendencia = {
+  caiu: "caiu",
+  subiu: "subiu",
+  estavel: "estavel",
+} as const;
+
+export type RegionalInsightsTendenciasItem = {
+  categoria: string;
+  avgEstaSmana: number;
+  avgSemanaPassada: number;
+  variacao: number;
+  tendencia: RegionalInsightsTendenciasItemTendencia;
+};
+
+export type RegionalInsightsMercadosPorBairroItem = {
+  bairro?: string | null;
+  mercado: string;
+  avgPreco: number;
+  totalOfertas: number;
+  totalValidacoes: number;
+};
+
+export type RegionalInsightsProdutosTrendItem = {
+  produto?: string | null;
+  totalConfirmacoes: number;
+  totalValidacoes: number;
+  menorPreco?: number;
+  ofertasCount: number;
+};
+
+export interface RegionalInsights {
+  tendencias: RegionalInsightsTendenciasItem[];
+  mercadosPorBairro: RegionalInsightsMercadosPorBairroItem[];
+  produtosTrend: RegionalInsightsProdutosTrendItem[];
+}
+
+export type AdminAnalyticsTopProdutosItem = {
+  produto: string;
+  totalOfertas: number;
+  totalValidacoes: number;
+  totalConfirmacoes: number;
+  avgPreco: number;
+};
+
+export type AdminAnalyticsTopMercadosItem = {
+  mercado: string;
+  totalOfertas: number;
+  totalEngajamento: number;
+  avgScore: number;
+};
+
+export type AdminAnalyticsDistribuicaoCategoriaItem = {
+  categoria: string;
+  total: number;
+  percentual: number;
+};
+
+export type AdminAnalyticsAtividadeDiariaItem = {
+  dia: string;
+  ofertas: number;
+  confirmacoes: number;
+};
+
+export interface AdminAnalytics {
+  topProdutos: AdminAnalyticsTopProdutosItem[];
+  topMercados: AdminAnalyticsTopMercadosItem[];
+  distribuicaoCategoria: AdminAnalyticsDistribuicaoCategoriaItem[];
+  atividadeDiaria: AdminAnalyticsAtividadeDiariaItem[];
+}
+
+export type MercadoPatrocinadoStatus =
+  (typeof MercadoPatrocinadoStatus)[keyof typeof MercadoPatrocinadoStatus];
+
+export const MercadoPatrocinadoStatus = {
+  ativo: "ativo",
+  pausado: "pausado",
+  expirado: "expirado",
+} as const;
+
+export interface MercadoPatrocinado {
+  id: number;
+  nomeMercado: string;
+  nomeExibicao: string;
+  logoUrl?: string | null;
+  cidade: string;
+  bairro?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  planoPatrocinio: string;
+  status: MercadoPatrocinadoStatus;
+  dataInicio: string;
+  dataFim: string;
+  prioridade: number;
+  limiteExibicoesDiarias?: number | null;
+  totalExibicoes: number;
+  totalCliques: number;
+  ctr: number;
+  diasRestantes: number;
+  nomeCampanha?: string | null;
+  descricaoCampanha?: string | null;
+  modoTeste: boolean;
+  observacoes?: string | null;
+  criadoEm: string;
+  atualizadoEm: string;
+}
+
+export interface MercadoFeed {
+  id: number;
+  nomeExibicao: string;
+  logoUrl?: string | null;
+  cidade: string;
+  bairro?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  planoPatrocinio: string;
+  prioridade: number;
+  nomeCampanha?: string | null;
+  descricaoCampanha?: string | null;
+  modoTeste: boolean;
+}
+
+export interface CreateMercadoPatrocinadoBody {
+  nomeMercado: string;
+  nomeExibicao: string;
+  logoUrl?: string;
+  cidade: string;
+  bairro?: string;
+  latitude?: number;
+  longitude?: number;
+  planoPatrocinio: string;
+  dataInicio: string;
+  dataFim: string;
+  prioridade?: number;
+  limiteExibicoesDiarias?: number;
+  nomeCampanha?: string;
+  descricaoCampanha?: string;
+  modoTeste?: boolean;
+  observacoes?: string;
+}
+
+export type MercadoEventoBodyDispositivo =
+  (typeof MercadoEventoBodyDispositivo)[keyof typeof MercadoEventoBodyDispositivo];
+
+export const MercadoEventoBodyDispositivo = {
+  mobile: "mobile",
+  web: "web",
+} as const;
+
+export interface MercadoEventoBody {
+  origem?: string;
+  bairro?: string;
+  distanciaKm?: number;
+  dispositivo?: MercadoEventoBodyDispositivo;
+  tipoFeed?: string;
+}
+
+export type ComercialAnalyticsKpis = {
+  totalImpressoes: number;
+  totalCliques: number;
+  ctrMedio: number;
+  campanhasAtivas: number;
+  campanhasPausadas: number;
+  campanhasExpiradas: number;
+};
+
+export type ComercialAnalyticsEvolucaoDiariaItem = {
+  data: string;
+  impressoes: number;
+  cliques: number;
+  ctr: number;
+};
+
+export type ComercialAnalyticsCliquePorHoraItem = {
+  hora: number;
+  cliques: number;
+  impressoes: number;
+};
+
+export type ComercialAnalyticsCtrPorBairroItem = {
+  bairro?: string | null;
+  cidade: string;
+  impressoes: number;
+  cliques: number;
+  ctr: number;
+};
+
+export type ComercialAnalyticsRankingItem = {
+  id: number;
+  nomeExibicao: string;
+  cidade: string;
+  status: string;
+  impressoes: number;
+  cliques: number;
+  ctr: number;
+};
+
+export type ComercialAnalyticsDispositivoSplitItem = {
+  dispositivo: string;
+  total: number;
+  percentual: number;
+};
+
+export interface ComercialAnalytics {
+  kpis: ComercialAnalyticsKpis;
+  evolucaoDiaria: ComercialAnalyticsEvolucaoDiariaItem[];
+  cliquePorHora: ComercialAnalyticsCliquePorHoraItem[];
+  ctrPorBairro: ComercialAnalyticsCtrPorBairroItem[];
+  ranking: ComercialAnalyticsRankingItem[];
+  dispositivoSplit: ComercialAnalyticsDispositivoSplitItem[];
+}
+
+export interface AdminFundador {
+  id: number;
+  usuarioId: number;
+  posicao: number;
+  adicionadoPor: string;
+  /** @nullable */
+  observacao?: string | null;
+  criadoEm: string;
+  nome: string;
+  /** @nullable */
+  email?: string | null;
+  pontos: number;
+  bloqueado: boolean;
+  totalOfertas: number;
+  atividadeTotal: number;
+}
+
+export interface FundadorElegivel {
+  id: number;
+  nome: string;
+  /** @nullable */
+  email?: string | null;
+  pontos: number;
+  totalOfertas: number;
+  atividadeTotal: number;
+}
+
+export interface FundadorInput {
+  usuarioId: number;
+  observacao?: string;
+}
+
+/**
+ * presencial = in-store real photo; encarte = folder/flyer/promotional art
+ */
+export type ClassificaTipoResponseTipo =
+  (typeof ClassificaTipoResponseTipo)[keyof typeof ClassificaTipoResponseTipo];
+
+export const ClassificaTipoResponseTipo = {
+  presencial: "presencial",
+  encarte: "encarte",
+} as const;
+
+export interface ClassificaTipoResponse {
+  /** presencial = in-store real photo; encarte = folder/flyer/promotional art */
+  tipo: ClassificaTipoResponseTipo;
+  /** Confidence 0–1. Values < 0.75 should prompt a user confirmation UI. */
+  confianca: number;
+  /** Short reasons behind the classification (max 3). */
+  indicadores: string[];
 }
 
 export interface ErrorResponse {
@@ -324,6 +1052,16 @@ export type ListOfertasParams = {
    * Sort order
    */
   ordenar?: ListOfertasOrdenar;
+  /**
+   * Number of items per page (cursor pagination)
+   * @minimum 1
+   * @maximum 50
+   */
+  limit?: number;
+  /**
+   * Opaque cursor from previous page's nextCursor field
+   */
+  cursor?: string;
 };
 
 export type ListOfertasOrdenar =
@@ -335,24 +1073,157 @@ export const ListOfertasOrdenar = {
   validacoes: "validacoes",
   recente: "recente",
   score: "score",
+  trending: "trending",
 } as const;
 
-export type GetAlertasParams = {
-  usuarioId: number;
+export type NaoEncontreiOferta200 = {
+  ok: boolean;
+  naoEncontreiMais: number;
+  statusUsuario?: string | null;
 };
 
-export type GetAlertaMatchesParams = {
-  usuarioId: number;
+export type GetRankingParams = {
+  /**
+   * If 'semana', returns weekly ranking by number of offers published in the last 7 days
+   */
+  periodo?: GetRankingPeriodo;
 };
+
+export type GetRankingPeriodo =
+  (typeof GetRankingPeriodo)[keyof typeof GetRankingPeriodo];
+
+export const GetRankingPeriodo = {
+  semana: "semana",
+} as const;
 
 export type GetHistoricoPrecosParams = {
   produto: string;
 };
 
-export type ListFavoritosParams = {
-  usuarioId: number;
+export type AprovarValidacao200 = {
+  ok?: boolean;
+  status?: string;
 };
 
-export type RemoveFavoritoParams = {
-  usuarioId: number;
+export type RecusarValidacao200 = {
+  ok?: boolean;
+  status?: string;
+};
+
+export type BloquearUsuarioBody = {
+  motivo?: string | null;
+};
+
+export type SuspenderUsuario200 = {
+  ok: boolean;
+  suspensoAte?: string | null;
+  motivoPunicao?: string | null;
+};
+
+export type DeleteAdminUsuarioBody = {
+  confirmar: boolean;
+  motivo: string;
+};
+
+export type DeleteAdminUsuario200 = {
+  ok: boolean;
+  nome: string;
+};
+
+export type GetAdminLogsParams = {
+  limit?: number;
+  acao?: string;
+};
+
+export type GetInsightsRadarParams = {
+  lat?: number;
+  lng?: number;
+  raio?: number;
+};
+
+export type GetInsightsRegionalParams = {
+  cidade?: string;
+};
+
+export type PostAdminOfertasAnalisarIaLoteBody = {
+  /** Max offers to process (default 20, max 50) */
+  limite?: number;
+};
+
+export type PostAdminOfertasAnalisarIaLote200 = {
+  processadas: number;
+};
+
+export type PatchAdminOfertasIdAplicarCorrecaoBody = {
+  categoria: string;
+};
+
+export type GetTrendingParams = {
+  /**
+   * User latitude for distance calculation
+   */
+  lat?: number;
+  /**
+   * User longitude for distance calculation
+   */
+  lng?: number;
+  /**
+   * @minimum 1
+   * @maximum 20
+   */
+  limit?: number;
+};
+
+export type GetFeedSeguindoParams = {
+  /**
+   * @minimum 1
+   * @maximum 50
+   */
+  limit?: number;
+  cursor?: string;
+};
+
+export type GetMercadosPatrocinadosFeedParams = {
+  cidade?: string;
+};
+
+export type UpdateMercadoPatrocinadoStatusBodyStatus =
+  (typeof UpdateMercadoPatrocinadoStatusBodyStatus)[keyof typeof UpdateMercadoPatrocinadoStatusBodyStatus];
+
+export const UpdateMercadoPatrocinadoStatusBodyStatus = {
+  ativo: "ativo",
+  pausado: "pausado",
+  expirado: "expirado",
+} as const;
+
+export type UpdateMercadoPatrocinadoStatusBody = {
+  status: UpdateMercadoPatrocinadoStatusBodyStatus;
+};
+
+export type ExtenderMercadoPatrocinadoBody = {
+  /**
+   * @minimum 1
+   * @maximum 365
+   */
+  dias: number;
+};
+
+export type GetComercialAnalyticsParams = {
+  /**
+   * Number of days to aggregate (7, 30, 90)
+   */
+  periodo?: number;
+  /**
+   * Filter by city
+   */
+  cidade?: string;
+  /**
+   * Filter by specific sponsored market id
+   */
+  mercadoId?: number;
+};
+
+export type ClassificaTipoOfertaBody = {
+  /** Base64-encoded image (data URI or raw) */
+  imageBase64: string;
 };

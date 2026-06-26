@@ -5,26 +5,27 @@ import { setCurrentUser } from "@/lib/current-user";
 
 const BASE = import.meta.env.BASE_URL.replace(/\/$/, "");
 
-function maskTelefone(v: string): string {
-  const d = v.replace(/\D/g, "").slice(0, 11);
-  if (d.length === 0) return "";
-  if (d.length <= 2) return `(${d}`;
-  if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
-  return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-}
-
-function maskCPFInput(v: string): string {
-  const d = v.replace(/\D/g, "").slice(0, 11);
-  if (d.length <= 3) return d;
-  if (d.length <= 6) return `${d.slice(0, 3)}.${d.slice(3)}`;
-  if (d.length <= 9) return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6)}`;
-  return `${d.slice(0, 3)}.${d.slice(3, 6)}.${d.slice(6, 9)}-${d.slice(9)}`;
+function AiLogo({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 40 40" fill="none" className={className}>
+      <path d="M20 5L4 35" stroke="url(#loginLg)" strokeWidth="5.5" strokeLinecap="round"/>
+      <path d="M20 5L36 35" stroke="url(#loginLg)" strokeWidth="5.5" strokeLinecap="round"/>
+      <circle cx="20" cy="26" r="4" fill="#F2C14E"/>
+      <defs>
+        <linearGradient id="loginLg" x1="20" y1="5" x2="20" y2="35" gradientUnits="userSpaceOnUse">
+          <stop stopColor="#FFD97A"/>
+          <stop offset="1" stopColor="#D4A017"/>
+        </linearGradient>
+      </defs>
+    </svg>
+  );
 }
 
 export default function Login() {
   const [, setLocation] = useLocation();
-  const [cpf, setCpf] = useState("");
-  const [telefone, setTelefone] = useState("");
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [showSenha, setShowSenha] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -32,15 +33,13 @@ export default function Login() {
     e.preventDefault();
     setError("");
 
-    const cleanCPF = cpf.replace(/\D/g, "");
-    const cleanTel = telefone.replace(/\D/g, "");
-
-    if (cleanCPF.length !== 11) {
-      setError("Digite o CPF completo (11 dígitos).");
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanEmail)) {
+      setError("Digite um e-mail válido.");
       return;
     }
-    if (cleanTel.length !== 11) {
-      setError("Digite o telefone completo com DDD.");
+    if (!senha) {
+      setError("Digite sua senha.");
       return;
     }
 
@@ -49,7 +48,8 @@ export default function Login() {
       const res = await fetch(`${BASE}/api/usuarios/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cpf: cleanCPF, telefone: cleanTel }),
+        credentials: "include",
+        body: JSON.stringify({ email: cleanEmail, senha }),
       });
       const data = await res.json();
 
@@ -61,10 +61,11 @@ export default function Login() {
       setCurrentUser({
         id: data.id,
         nome: data.nome,
-        telefone: data.telefone,
-        cpf: data.cpf,
+        email: data.email,
         cidade: data.cidade,
         estado: data.estado,
+        apiToken: data.apiToken ?? undefined,
+        isAdmin: data.isAdmin ?? false,
       });
       const returnTo = sessionStorage.getItem("loginReturnTo");
       sessionStorage.removeItem("loginReturnTo");
@@ -77,7 +78,8 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0f172a] flex flex-col items-center justify-center p-4">
+    <div className="min-h-screen flex flex-col items-center justify-center p-4"
+         style={{ background: "linear-gradient(160deg, #1a0933 0%, #130926 60%, #0d0620 100%)" }}>
       <motion.div
         initial={{ opacity: 0, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
@@ -86,16 +88,20 @@ export default function Login() {
       >
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center h-16 w-16 rounded-2xl bg-emerald-500 shadow-lg mb-4">
-            <span className="text-3xl">🛒</span>
+          <div className="inline-flex items-center justify-center h-20 w-20 rounded-3xl mb-4"
+               style={{ background: "linear-gradient(135deg, #1e0d38, #2d1262)", boxShadow: "0 8px 32px rgba(242,193,78,0.2)" }}>
+            <AiLogo className="h-12 w-12" />
           </div>
-          <h1 className="text-white text-2xl font-black">Comparador de Preços</h1>
-          <p className="text-slate-400 text-sm mt-1">Encontre as melhores ofertas da sua cidade</p>
+          <h1 className="text-2xl font-black">
+            <span style={{ color: "#F2C14E" }}>ai</span><span className="text-white">compens</span><span style={{ color: "#F2C14E" }}>a</span>
+          </h1>
+          <p className="text-slate-400 text-sm mt-1">Descubra onde realmente compensa comprar</p>
         </div>
 
         <form
           onSubmit={handleSubmit}
-          className="bg-[#1e293b] rounded-3xl p-6 space-y-4 shadow-xl"
+          className="rounded-3xl p-6 space-y-4 shadow-xl"
+          style={{ background: "#1d0e36", border: "1px solid rgba(58,24,103,0.5)" }}
         >
           <h2 className="text-white font-bold text-lg">Entrar na sua conta</h2>
 
@@ -109,46 +115,56 @@ export default function Login() {
             </motion.div>
           )}
 
-          {/* CPF */}
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-              CPF
+              E-mail
             </label>
             <input
-              type="text"
-              inputMode="numeric"
-              placeholder="000.000.000-00"
-              value={cpf}
-              onChange={(e) => {
-                setCpf(maskCPFInput(e.target.value));
-                setError("");
-              }}
-              className="w-full bg-[#0f172a] text-white placeholder-slate-600 rounded-xl px-4 py-3 text-sm outline-none border border-[#334155] focus:border-emerald-500 transition-colors"
+              type="email"
+              inputMode="email"
+              autoComplete="email"
+              placeholder="seu@email.com"
+              value={email}
+              onChange={(e) => { setEmail(e.target.value); setError(""); }}
+              className="w-full text-white placeholder-slate-600 rounded-xl px-4 py-3 text-sm outline-none border transition-colors"
+              style={{ background: "#130926", borderColor: "#3a1867" }}
+              onFocus={(e) => e.target.style.borderColor = "#F2C14E"}
+              onBlur={(e) => e.target.style.borderColor = "#3a1867"}
             />
           </div>
 
-          {/* Telefone */}
           <div>
             <label className="block text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">
-              Telefone (com DDD)
+              Senha
             </label>
-            <input
-              type="tel"
-              inputMode="numeric"
-              placeholder="(11) 99999-9999"
-              value={telefone}
-              onChange={(e) => {
-                setTelefone(maskTelefone(e.target.value));
-                setError("");
-              }}
-              className="w-full bg-[#0f172a] text-white placeholder-slate-600 rounded-xl px-4 py-3 text-sm outline-none border border-[#334155] focus:border-emerald-500 transition-colors"
-            />
+            <div className="relative">
+              <input
+                type={showSenha ? "text" : "password"}
+                autoComplete="current-password"
+                placeholder="Sua senha"
+                value={senha}
+                onChange={(e) => { setSenha(e.target.value); setError(""); }}
+                className="w-full text-white placeholder-slate-600 rounded-xl px-4 py-3 pr-12 text-sm outline-none border transition-colors"
+                style={{ background: "#130926", borderColor: "#3a1867" }}
+                onFocus={(e) => e.target.style.borderColor = "#F2C14E"}
+                onBlur={(e) => e.target.style.borderColor = "#3a1867"}
+              />
+              <button
+                type="button"
+                onClick={() => setShowSenha((v) => !v)}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors text-lg"
+                tabIndex={-1}
+              >
+                {showSenha ? "🙈" : "👁️"}
+              </button>
+            </div>
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-emerald-500 hover:bg-emerald-400 disabled:opacity-60 disabled:cursor-not-allowed text-white font-black rounded-2xl py-4 text-base transition-colors"
+            className="w-full font-black rounded-2xl py-4 text-base transition-all disabled:opacity-60 disabled:cursor-not-allowed"
+            style={{ background: "linear-gradient(135deg, #F2C14E, #D4A017)", color: "#130926" }}
           >
             {loading ? "Entrando..." : "Entrar"}
           </button>
@@ -157,7 +173,8 @@ export default function Login() {
             <button
               type="button"
               onClick={() => setLocation("/cadastro")}
-              className="text-emerald-400 hover:text-emerald-300 text-sm font-semibold transition-colors"
+              className="text-sm font-semibold transition-colors"
+              style={{ color: "#F2C14E" }}
             >
               Ainda não tenho conta →
             </button>

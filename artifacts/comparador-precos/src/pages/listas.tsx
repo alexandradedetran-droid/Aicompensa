@@ -290,10 +290,11 @@ export default function Listas() {
   const nome = useMemo(() => getListaNome(), []);
   const emoji = useMemo(() => getListaEmoji(), []);
 
-  const { data: ofertas = [] } = useListOfertas(
+  const { data: feedPage } = useListOfertas(
     {},
     { query: { queryKey: getListOfertasQueryKey() } }
   );
+  const ofertas = feedPage?.items ?? [];
 
   const { economia, itensComOferta } = useMemo(() => {
     let total = 0;
