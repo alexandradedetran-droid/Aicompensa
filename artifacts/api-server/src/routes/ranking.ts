@@ -154,6 +154,8 @@ router.get("/perfil/:id", async (req, res) => {
   ]);
 
   const amigosIndicados = refStats?.ativos ?? 0;
+  const frontendUrl = (process.env["FRONTEND_URL"] ?? "https://aicompensa.com.br").replace(/\/$/, "");
+  const urlConvite = `${frontendUrl}/cadastro?ref=${codigoIndicacao}`;
 
   res.json({
     id: usuario.id,
@@ -167,6 +169,7 @@ router.get("/perfil/:id", async (req, res) => {
     cidade: usuario.cidadeUsuario ?? null,
     estado: usuario.estado ?? null,
     codigoIndicacao,
+    urlConvite,
     amigosIndicados,
     pontosGanhos: amigosIndicados * 100,
   });

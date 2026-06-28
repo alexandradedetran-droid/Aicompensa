@@ -520,16 +520,15 @@ export default function Perfil() {
                         </span>
                       </div>
 
-                      {/* Action buttons */}
-                      <div className="grid grid-cols-2 gap-2">
+                      {/* Action buttons — 3 columns */}
+                      <div className="grid grid-cols-3 gap-2">
                         <button
                           onClick={() => {
-                            const link = `https://aicompensa.com.br/cadastro?ref=${perfil.codigoIndicacao}`;
-                            navigator.clipboard.writeText(link)
-                              .then(() => toast({ title: "Link copiado!", description: `aicompensa.com.br/cadastro?ref=${perfil.codigoIndicacao}` }))
+                            navigator.clipboard.writeText(perfil.codigoIndicacao!)
+                              .then(() => toast({ title: "Código copiado!", description: perfil.codigoIndicacao! }))
                               .catch(() => toast({ title: "Erro ao copiar", variant: "destructive" }));
                           }}
-                          className="flex items-center justify-center gap-2 py-2.5 rounded-xl border border-slate-200 text-xs font-bold text-slate-700 hover:bg-slate-50 transition-colors active:scale-95"
+                          className="flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl border border-slate-200 text-[11px] font-bold text-slate-700 hover:bg-slate-50 transition-colors active:scale-95"
                         >
                           <Copy className="h-3.5 w-3.5" />
                           Copiar código
@@ -537,13 +536,26 @@ export default function Perfil() {
 
                         <button
                           onClick={() => {
-                            const link = `https://aicompensa.com.br/cadastro?ref=${perfil.codigoIndicacao}`;
+                            const url = perfil.urlConvite ?? `https://aicompensa.com.br/cadastro?ref=${perfil.codigoIndicacao}`;
+                            navigator.clipboard.writeText(url)
+                              .then(() => toast({ title: "Link copiado!", description: url }))
+                              .catch(() => toast({ title: "Erro ao copiar", variant: "destructive" }));
+                          }}
+                          className="flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl border border-slate-200 text-[11px] font-bold text-slate-700 hover:bg-slate-50 transition-colors active:scale-95"
+                        >
+                          <Share2 className="h-3.5 w-3.5" />
+                          Copiar link
+                        </button>
+
+                        <button
+                          onClick={() => {
+                            const url = perfil.urlConvite ?? `https://aicompensa.com.br/cadastro?ref=${perfil.codigoIndicacao}`;
                             const msg = encodeURIComponent(
-                              `Oi! Estou no AíCompensa, app que ajuda a encontrar os melhores preços no supermercado. 🛒\nUse meu código *${perfil.codigoIndicacao}* ao criar sua conta!\n${link}`
+                              `Economize nas compras comigo no AíCompensa! Use meu código *${perfil.codigoIndicacao}* ou acesse: ${url}`
                             );
                             window.open(`https://wa.me/?text=${msg}`, "_blank", "noopener,noreferrer");
                           }}
-                          className="flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-colors active:scale-95"
+                          className="flex flex-col items-center justify-center gap-1 py-2.5 rounded-xl text-[11px] font-bold transition-colors active:scale-95"
                           style={{ background: "rgba(37,211,102,0.1)", border: "1px solid rgba(37,211,102,0.25)", color: "#16a34a" }}
                         >
                           <Share2 className="h-3.5 w-3.5" />

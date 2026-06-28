@@ -653,6 +653,7 @@ export interface Perfil {
   cidade?: string | null;
   estado?: string | null;
   codigoIndicacao?: string | null;
+  urlConvite?: string | null;
   amigosIndicados?: number;
   pontosGanhos?: number;
 }
