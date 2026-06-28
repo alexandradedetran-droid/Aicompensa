@@ -157,7 +157,7 @@ export default function Perfil() {
 
   const userId = currentUser.id;
 
-  const { data: perfil, isLoading, isError } = useGetPerfil(userId, {
+  const { data: perfil, isLoading, isError, refetch } = useGetPerfil(userId, {
     query: { queryKey: getGetPerfilQueryKey(userId) },
   });
 
@@ -192,7 +192,14 @@ export default function Perfil() {
         <div className="mx-4 mt-6 p-10 text-center rounded-3xl bg-[#1d0e36] border border-[#3a1867]">
           <p className="text-4xl mb-3">📡</p>
           <p className="text-slate-300 font-bold mb-1">Erro de conexão</p>
-          <p className="text-slate-500 text-sm mt-1">Não foi possível carregar seu perfil. Verifique sua internet e tente novamente.</p>
+          <p className="text-slate-500 text-sm mt-1 mb-4">Não foi possível carregar seu perfil. Verifique sua internet e tente novamente.</p>
+          <button
+            onClick={() => refetch()}
+            className="px-5 py-2 rounded-xl text-sm font-bold text-white"
+            style={{ background: "rgba(242,193,78,0.15)", border: "1px solid rgba(242,193,78,0.4)", color: "#F2C14E" }}
+          >
+            Tentar novamente
+          </button>
         </div>
       ) : !perfil ? (
         <div className="mx-4 mt-6 p-10 text-center rounded-3xl bg-[#1d0e36] border border-[#3a1867]">

@@ -1,7 +1,25 @@
 import { Router } from "express";
-import { db, usuariosTable, ofertasTable } from "@workspace/db";
+import { db, usuariosTable, ofertasTable, referralsTable } from "@workspace/db";
 import { desc, eq, count, sum, sql } from "drizzle-orm";
 import { getNivelUsuario } from "../lib/nivel-usuario";
+
+const CODIGO_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+async function gerarCodigoUnico(): Promise<string> {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    let code = "";
+    for (let i = 0; i < 6; i++) code += CODIGO_CHARS[Math.floor(Math.random() * CODIGO_CHARS.length)];
+    const [existing] = await db
+      .select({ id: usuariosTable.id })
+      .from(usuariosTable)
+      .where(eq(usuariosTable.codigoIndicacao, code))
+      .limit(1);
+    if (!existing) return code;
+  }
+  let code = "";
+  for (let i = 0; i < 8; i++) code += CODIGO_CHARS[Math.floor(Math.random() * CODIGO_CHARS.length)];
+  return code;
+}
 
 const router = Router();
 
@@ -111,13 +129,31 @@ router.get("/perfil/:id", async (req, res) => {
     return;
   }
 
-  const [ofertaStats] = await db
-    .select({
-      totalOfertas: count(ofertasTable.id),
-      totalValidacoesRecebidas: sum(ofertasTable.validacoes),
-    })
-    .from(ofertasTable)
-    .where(eq(ofertasTable.usuarioId, id));
+  // Auto-generate referral code for legacy users who don't have one yet
+  let codigoIndicacao = usuario.codigoIndicacao;
+  if (!codigoIndicacao) {
+    codigoIndicacao = await gerarCodigoUnico();
+    await db
+      .update(usuariosTable)
+      .set({ codigoIndicacao })
+      .where(eq(usuariosTable.id, id));
+  }
+
+  const [[ofertaStats], [refStats]] = await Promise.all([
+    db
+      .select({
+        totalOfertas: count(ofertasTable.id),
+        totalValidacoesRecebidas: sum(ofertasTable.validacoes),
+      })
+      .from(ofertasTable)
+      .where(eq(ofertasTable.usuarioId, id)),
+    db
+      .select({ ativos: sql<number>`sum(case when status = 'ativo' then 1 else 0 end)::int` })
+      .from(referralsTable)
+      .where(eq(referralsTable.inviterUserId, id)),
+  ]);
+
+  const amigosIndicados = refStats?.ativos ?? 0;
 
   res.json({
     id: usuario.id,
@@ -130,6 +166,9 @@ router.get("/perfil/:id", async (req, res) => {
     telefone: usuario.telefone ?? null,
     cidade: usuario.cidadeUsuario ?? null,
     estado: usuario.estado ?? null,
+    codigoIndicacao,
+    amigosIndicados,
+    pontosGanhos: amigosIndicados * 100,
   });
 });
 
