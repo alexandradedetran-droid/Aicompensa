@@ -23,6 +23,17 @@ const Alertas      = lazy(() => import("@/pages/alertas"));
 const Lista        = lazy(() => import("@/pages/lista"));
 const Listas       = lazy(() => import("@/pages/listas"));
 const ListaDetalhe = lazy(() => import("@/pages/lista-detalhe"));
+const Convite       = lazy(() => import("@/pages/convite"));
+const Economia      = lazy(() => import("@/pages/economia"));
+const ListaAnalise  = lazy(() => import("@/pages/lista-analise"));
+const Mercados      = lazy(() => import("@/pages/mercados"));
+const MercadoDetalhe = lazy(() => import("@/pages/mercado-detalhe"));
+const Notificacoes  = lazy(() => import("@/pages/notificacoes"));
+const PreferenciasNotificacoes = lazy(() => import("@/pages/preferencias-notificacoes"));
+const Privacidade   = lazy(() => import("@/pages/privacidade"));
+const Recompensas   = lazy(() => import("@/pages/recompensas"));
+const Termos        = lazy(() => import("@/pages/termos"));
+const Ajuda         = lazy(() => import("@/pages/ajuda"));
 const NotFound     = lazy(() => import("@/pages/not-found"));
 
 // Admin routes — fully lazy (separate chunk)
@@ -84,18 +95,29 @@ function Router() {
             <Switch location={location} key={location}>
               <Route path="/" component={Home} />
               <Route path="/ofertas" component={Ofertas} />
+              <Route path="/mercados/:id" component={MercadoDetalhe} />
+              <Route path="/mercados" component={Mercados} />
               <Route path="/publicar" component={Publicar} />
+              <Route path="/recompensas" component={Recompensas} />
               <Route path="/ranking" component={Ranking} />
               <Route path="/perfil" component={Perfil} />
               <Route path="/mapa" component={Mapa} />
               <Route path="/alertas" component={Alertas} />
               <Route path="/listas" component={Listas} />
               <Route path="/listas/:id" component={ListaDetalhe} />
+              <Route path="/lista/analise" component={ListaAnalise} />
               {/* Legacy /lista → redirect to /listas */}
               <Route path="/lista">
                 <Redirect to="/listas" />
               </Route>
               <Route path="/lista/:codigo" component={Lista} />
+              <Route path="/economia" component={Economia} />
+              <Route path="/convite" component={Convite} />
+              <Route path="/notificacoes" component={Notificacoes} />
+              <Route path="/preferencias-notificacoes" component={PreferenciasNotificacoes} />
+              <Route path="/ajuda" component={Ajuda} />
+              <Route path="/termos" component={Termos} />
+              <Route path="/privacidade" component={Privacidade} />
               <Route component={NotFound} />
             </Switch>
           </Suspense>

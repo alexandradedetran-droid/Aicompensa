@@ -1228,3 +1228,74 @@ export type ClassificaTipoOfertaBody = {
   /** Base64-encoded image (data URI or raw) */
   imageBase64: string;
 };
+
+export interface MercadoListItem {
+  id: number | null;
+  legacyKey: string | null;
+  isLegacy: boolean;
+  nome: string;
+  cidade: string | null;
+  bairro: string | null;
+  estado: string | null;
+  lat: number | null;
+  lng: number | null;
+  totalOfertas: number;
+  ultimaOfertaEm: string | null;
+  ativo: boolean;
+  logoUrl: string | null;
+  fachadaUrl: string | null;
+}
+
+export interface MercadoDetail extends MercadoListItem {
+  endereco: string | null;
+  fonte: string;
+  totalPorCategoria: Array<{ categoria: string; total: number }>;
+}
+
+export interface MercadoOfertasResponse {
+  items: Oferta[];
+  nextCursor: string | null;
+  hasMore: boolean;
+}
+
+export type ListMercadosParams = {
+  cidade?: string;
+  cidades?: string;
+  estado?: string;
+};
+
+export type ListMercadoOfertasParams = {
+  limit?: number;
+  cursor?: string;
+};
+
+export type GetAdminOfertasPagedParams = {
+  limit?: number;
+  cursor?: number;
+};
+
+export type GetAdminUsuariosPagedParams = {
+  limit?: number;
+  cursor?: number;
+};
+
+export interface RankingItem {
+  posicao: number;
+  mercado: string;
+  preco: number;
+  diferencaValor: number;
+  distanciaKm: number | null;
+  isOfertaAtual: boolean;
+}
+
+export interface ComparacaoResult {
+  status: "INSUFFICIENT_DATA" | "CURRENT_IS_BEST" | "HAS_BETTER_PRICE";
+  mercadosComparados: number;
+  precoAtual?: number;
+  mercado?: { nome: string; cidade?: string | null } | null;
+  distanciaKm?: number | null;
+  melhorPreco?: number | null;
+  economiaValor?: number | null;
+  economiaPercentual?: number | null;
+  ranking: RankingItem[];
+}

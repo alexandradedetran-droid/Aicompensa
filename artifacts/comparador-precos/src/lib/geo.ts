@@ -42,6 +42,7 @@ export type ConfirmedMarket = {
   lat?: number;
   lng?: number;
   distanciaMetros?: number;
+  mercadoId?: number;
 };
 
 const RECENTES_KEY = "mercados_recentes_v1";

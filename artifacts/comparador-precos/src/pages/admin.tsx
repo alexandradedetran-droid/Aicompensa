@@ -44,7 +44,7 @@ import {
   getGetAdminFundadoresElegiveisQueryKey,
   useGetAdminAuditoriaMetricas,
   getGetAdminAuditoriaMetricasQueryKey,
-  getGetAdminOfertasQueryKey,
+  getGetAdminOfertasPagedQueryKey as getGetAdminOfertasQueryKey,
   usePostAdminOfertasIdAnalisarIa,
   usePostAdminOfertasAnalisarIaLote,
   usePatchAdminOfertasIdAplicarCorrecao,
