@@ -95,7 +95,16 @@ import type {
   UpdateMercadoPatrocinadoStatusBody,
   UpdateOfertaBody,
   UsuarioCriado,
-  UsuarioRanking
+  UsuarioRanking,
+  OfertaBotStats,
+  FolhetoSource,
+  CreateFolhetoSourceBody,
+  FolhetoImport,
+  FolhetoImportItem,
+  ProductImageCandidate,
+  GetOfertaBotImportsParams,
+  GetOfertaBotRevisaoParams,
+  GetOfertaBotImagesParams,
 } from './api.schemas';
 
 import { customFetch } from '../custom-fetch';
@@ -6014,4 +6023,187 @@ export function useGetComparacao<TData = Awaited<ReturnType<typeof getComparacao
   const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+// ── OfertaBot Admin API ────────────────────────────────────────────────────────
+
+// Stats
+export const getOfertaBotStatsUrl = () => `/api/admin/ofertabot/stats`;
+export const getOfertaBotStats = async (options?: RequestInit): Promise<OfertaBotStats> =>
+  customFetch<OfertaBotStats>(getOfertaBotStatsUrl(), { ...options, method: 'GET' });
+export const getGetOfertaBotStatsQueryKey = () => ['/api/admin/ofertabot/stats'] as const;
+export const getGetOfertaBotStatsQueryOptions = <TData = Awaited<ReturnType<typeof getOfertaBotStats>>, TError = ErrorType<unknown>>(options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getOfertaBotStats>>, TError, TData>, request?: SecondParameter<typeof customFetch> }) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getGetOfertaBotStatsQueryKey();
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getOfertaBotStats>>> = ({ signal }) => getOfertaBotStats({ signal, ...requestOptions });
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<Awaited<ReturnType<typeof getOfertaBotStats>>, TError, TData> & { queryKey: QueryKey };
+};
+export function useGetOfertaBotStats<TData = Awaited<ReturnType<typeof getOfertaBotStats>>, TError = ErrorType<unknown>>(options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getOfertaBotStats>>, TError, TData>, request?: SecondParameter<typeof customFetch> }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetOfertaBotStatsQueryOptions(options);
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+// Sources
+export const getOfertaBotSourcesUrl = () => `/api/admin/ofertabot/sources`;
+export const getOfertaBotSources = async (options?: RequestInit): Promise<{ sources: FolhetoSource[] }> =>
+  customFetch<{ sources: FolhetoSource[] }>(getOfertaBotSourcesUrl(), { ...options, method: 'GET' });
+export const getGetOfertaBotSourcesQueryKey = () => ['/api/admin/ofertabot/sources'] as const;
+export const getGetOfertaBotSourcesQueryOptions = <TData = Awaited<ReturnType<typeof getOfertaBotSources>>, TError = ErrorType<unknown>>(options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getOfertaBotSources>>, TError, TData>, request?: SecondParameter<typeof customFetch> }) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getGetOfertaBotSourcesQueryKey();
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getOfertaBotSources>>> = ({ signal }) => getOfertaBotSources({ signal, ...requestOptions });
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<Awaited<ReturnType<typeof getOfertaBotSources>>, TError, TData> & { queryKey: QueryKey };
+};
+export function useGetOfertaBotSources<TData = Awaited<ReturnType<typeof getOfertaBotSources>>, TError = ErrorType<unknown>>(options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getOfertaBotSources>>, TError, TData>, request?: SecondParameter<typeof customFetch> }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetOfertaBotSourcesQueryOptions(options);
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const postOfertaBotSource = async (body: CreateFolhetoSourceBody, options?: RequestInit): Promise<{ source: FolhetoSource }> =>
+  customFetch<{ source: FolhetoSource }>(`/api/admin/ofertabot/sources`, { ...options, method: 'POST', headers: { 'Content-Type': 'application/json', ...options?.headers }, body: JSON.stringify(body) });
+export const usePostOfertaBotSource = <TError = ErrorType<unknown>, TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof postOfertaBotSource>>, TError, CreateFolhetoSourceBody, TContext>, request?: SecondParameter<typeof customFetch> }): UseMutationResult<Awaited<ReturnType<typeof postOfertaBotSource>>, TError, CreateFolhetoSourceBody, TContext> => {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof postOfertaBotSource>>, CreateFolhetoSourceBody> = (body) => postOfertaBotSource(body, requestOptions);
+  return useMutation<Awaited<ReturnType<typeof postOfertaBotSource>>, TError, CreateFolhetoSourceBody, TContext>({ mutationFn, ...mutationOptions });
+};
+
+export const patchOfertaBotSource = async (id: number, body: Partial<CreateFolhetoSourceBody> & { ativo?: boolean }, options?: RequestInit): Promise<{ source: FolhetoSource }> =>
+  customFetch<{ source: FolhetoSource }>(`/api/admin/ofertabot/sources/${id}`, { ...options, method: 'PATCH', headers: { 'Content-Type': 'application/json', ...options?.headers }, body: JSON.stringify(body) });
+export const usePatchOfertaBotSource = <TError = ErrorType<unknown>, TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof patchOfertaBotSource>>, TError, { id: number; body: Partial<CreateFolhetoSourceBody> & { ativo?: boolean } }, TContext>, request?: SecondParameter<typeof customFetch> }): UseMutationResult<Awaited<ReturnType<typeof patchOfertaBotSource>>, TError, { id: number; body: Partial<CreateFolhetoSourceBody> & { ativo?: boolean } }, TContext> => {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof patchOfertaBotSource>>, { id: number; body: Partial<CreateFolhetoSourceBody> & { ativo?: boolean } }> = ({ id, body }) => patchOfertaBotSource(id, body, requestOptions);
+  return useMutation<Awaited<ReturnType<typeof patchOfertaBotSource>>, TError, { id: number; body: Partial<CreateFolhetoSourceBody> & { ativo?: boolean } }, TContext>({ mutationFn, ...mutationOptions });
+};
+
+// Run now
+export const postOfertaBotRunNow = async (options?: RequestInit): Promise<{ ok: boolean; message: string }> =>
+  customFetch<{ ok: boolean; message: string }>(`/api/admin/ofertabot/run-now`, { ...options, method: 'POST' });
+export const usePostOfertaBotRunNow = <TError = ErrorType<unknown>, TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof postOfertaBotRunNow>>, TError, void, TContext>, request?: SecondParameter<typeof customFetch> }): UseMutationResult<Awaited<ReturnType<typeof postOfertaBotRunNow>>, TError, void, TContext> => {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof postOfertaBotRunNow>>, void> = () => postOfertaBotRunNow(requestOptions);
+  return useMutation<Awaited<ReturnType<typeof postOfertaBotRunNow>>, TError, void, TContext>({ mutationFn, ...mutationOptions });
+};
+
+// Imports list
+export const getOfertaBotImportsUrl = (params?: GetOfertaBotImportsParams) => {
+  const q = params ? `?${new URLSearchParams(Object.entries(params).filter(([,v]) => v != null).map(([k,v]) => [k, String(v)]))}` : '';
+  return `/api/admin/ofertabot/imports${q}`;
+};
+export const getOfertaBotImports = async (params?: GetOfertaBotImportsParams, options?: RequestInit): Promise<{ imports: FolhetoImport[]; nextCursor: number | null; hasMore: boolean }> =>
+  customFetch<{ imports: FolhetoImport[]; nextCursor: number | null; hasMore: boolean }>(getOfertaBotImportsUrl(params), { ...options, method: 'GET' });
+export const getGetOfertaBotImportsQueryKey = (params?: GetOfertaBotImportsParams) => ['/api/admin/ofertabot/imports', ...(params ? [params] : [])] as const;
+export const getGetOfertaBotImportsQueryOptions = <TData = Awaited<ReturnType<typeof getOfertaBotImports>>, TError = ErrorType<unknown>>(params?: GetOfertaBotImportsParams, options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getOfertaBotImports>>, TError, TData>, request?: SecondParameter<typeof customFetch> }) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getGetOfertaBotImportsQueryKey(params);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getOfertaBotImports>>> = ({ signal }) => getOfertaBotImports(params, { signal, ...requestOptions });
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<Awaited<ReturnType<typeof getOfertaBotImports>>, TError, TData> & { queryKey: QueryKey };
+};
+export function useGetOfertaBotImports<TData = Awaited<ReturnType<typeof getOfertaBotImports>>, TError = ErrorType<unknown>>(params?: GetOfertaBotImportsParams, options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getOfertaBotImports>>, TError, TData>, request?: SecondParameter<typeof customFetch> }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetOfertaBotImportsQueryOptions(params, options);
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+// Import detail
+export const getOfertaBotImport = async (id: number, options?: RequestInit): Promise<{ import: FolhetoImport; items: FolhetoImportItem[] }> =>
+  customFetch<{ import: FolhetoImport; items: FolhetoImportItem[] }>(`/api/admin/ofertabot/imports/${id}`, { ...options, method: 'GET' });
+export const getGetOfertaBotImportQueryKey = (id: number) => [`/api/admin/ofertabot/imports/${id}`] as const;
+export const getGetOfertaBotImportQueryOptions = <TData = Awaited<ReturnType<typeof getOfertaBotImport>>, TError = ErrorType<unknown>>(id: number, options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getOfertaBotImport>>, TError, TData>, request?: SecondParameter<typeof customFetch> }) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getGetOfertaBotImportQueryKey(id);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getOfertaBotImport>>> = ({ signal }) => getOfertaBotImport(id, { signal, ...requestOptions });
+  return { queryKey, queryFn, enabled: !!id, ...queryOptions } as UseQueryOptions<Awaited<ReturnType<typeof getOfertaBotImport>>, TError, TData> & { queryKey: QueryKey };
+};
+export function useGetOfertaBotImport<TData = Awaited<ReturnType<typeof getOfertaBotImport>>, TError = ErrorType<unknown>>(id: number, options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getOfertaBotImport>>, TError, TData>, request?: SecondParameter<typeof customFetch> }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetOfertaBotImportQueryOptions(id, options);
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+// Publish all items in import
+export const postOfertaBotImportPublicar = async (id: number, options?: RequestInit): Promise<{ ok: boolean; publicados: number; erros: number }> =>
+  customFetch<{ ok: boolean; publicados: number; erros: number }>(`/api/admin/ofertabot/imports/${id}/publicar`, { ...options, method: 'POST' });
+export const usePostOfertaBotImportPublicar = <TError = ErrorType<unknown>, TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof postOfertaBotImportPublicar>>, TError, number, TContext>, request?: SecondParameter<typeof customFetch> }): UseMutationResult<Awaited<ReturnType<typeof postOfertaBotImportPublicar>>, TError, number, TContext> => {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof postOfertaBotImportPublicar>>, number> = (id) => postOfertaBotImportPublicar(id, requestOptions);
+  return useMutation<Awaited<ReturnType<typeof postOfertaBotImportPublicar>>, TError, number, TContext>({ mutationFn, ...mutationOptions });
+};
+
+// Revisao
+export const getOfertaBotRevisaoUrl = (params?: GetOfertaBotRevisaoParams) => {
+  const q = params ? `?${new URLSearchParams(Object.entries(params).filter(([,v]) => v != null).map(([k,v]) => [k, String(v)]))}` : '';
+  return `/api/admin/ofertabot/revisao${q}`;
+};
+export const getOfertaBotRevisao = async (params?: GetOfertaBotRevisaoParams, options?: RequestInit): Promise<{ items: FolhetoImportItem[]; nextCursor: number | null; hasMore: boolean }> =>
+  customFetch<{ items: FolhetoImportItem[]; nextCursor: number | null; hasMore: boolean }>(getOfertaBotRevisaoUrl(params), { ...options, method: 'GET' });
+export const getGetOfertaBotRevisaoQueryKey = (params?: GetOfertaBotRevisaoParams) => ['/api/admin/ofertabot/revisao', ...(params ? [params] : [])] as const;
+export const getGetOfertaBotRevisaoQueryOptions = <TData = Awaited<ReturnType<typeof getOfertaBotRevisao>>, TError = ErrorType<unknown>>(params?: GetOfertaBotRevisaoParams, options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getOfertaBotRevisao>>, TError, TData>, request?: SecondParameter<typeof customFetch> }) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getGetOfertaBotRevisaoQueryKey(params);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getOfertaBotRevisao>>> = ({ signal }) => getOfertaBotRevisao(params, { signal, ...requestOptions });
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<Awaited<ReturnType<typeof getOfertaBotRevisao>>, TError, TData> & { queryKey: QueryKey };
+};
+export function useGetOfertaBotRevisao<TData = Awaited<ReturnType<typeof getOfertaBotRevisao>>, TError = ErrorType<unknown>>(params?: GetOfertaBotRevisaoParams, options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getOfertaBotRevisao>>, TError, TData>, request?: SecondParameter<typeof customFetch> }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetOfertaBotRevisaoQueryOptions(params, options);
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+// Item actions
+export const postOfertaBotItemAprovar = async (id: number, options?: RequestInit): Promise<{ ok: boolean }> =>
+  customFetch<{ ok: boolean }>(`/api/admin/ofertabot/items/${id}/aprovar`, { ...options, method: 'POST' });
+export const usePostOfertaBotItemAprovar = <TError = ErrorType<unknown>, TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof postOfertaBotItemAprovar>>, TError, number, TContext>, request?: SecondParameter<typeof customFetch> }): UseMutationResult<Awaited<ReturnType<typeof postOfertaBotItemAprovar>>, TError, number, TContext> => {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof postOfertaBotItemAprovar>>, number> = (id) => postOfertaBotItemAprovar(id, requestOptions);
+  return useMutation<Awaited<ReturnType<typeof postOfertaBotItemAprovar>>, TError, number, TContext>({ mutationFn, ...mutationOptions });
+};
+
+export const postOfertaBotItemRejeitar = async (id: number, motivo?: string, options?: RequestInit): Promise<{ ok: boolean }> =>
+  customFetch<{ ok: boolean }>(`/api/admin/ofertabot/items/${id}/rejeitar`, { ...options, method: 'POST', headers: { 'Content-Type': 'application/json', ...options?.headers }, body: JSON.stringify({ motivo }) });
+export const usePostOfertaBotItemRejeitar = <TError = ErrorType<unknown>, TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof postOfertaBotItemRejeitar>>, TError, { id: number; motivo?: string }, TContext>, request?: SecondParameter<typeof customFetch> }): UseMutationResult<Awaited<ReturnType<typeof postOfertaBotItemRejeitar>>, TError, { id: number; motivo?: string }, TContext> => {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof postOfertaBotItemRejeitar>>, { id: number; motivo?: string }> = ({ id, motivo }) => postOfertaBotItemRejeitar(id, motivo, requestOptions);
+  return useMutation<Awaited<ReturnType<typeof postOfertaBotItemRejeitar>>, TError, { id: number; motivo?: string }, TContext>({ mutationFn, ...mutationOptions });
+};
+
+export const postOfertaBotItemPublicar = async (id: number, options?: RequestInit): Promise<{ ok: boolean; ofertaId: number | null }> =>
+  customFetch<{ ok: boolean; ofertaId: number | null }>(`/api/admin/ofertabot/items/${id}/publicar`, { ...options, method: 'POST' });
+export const usePostOfertaBotItemPublicar = <TError = ErrorType<unknown>, TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof postOfertaBotItemPublicar>>, TError, number, TContext>, request?: SecondParameter<typeof customFetch> }): UseMutationResult<Awaited<ReturnType<typeof postOfertaBotItemPublicar>>, TError, number, TContext> => {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof postOfertaBotItemPublicar>>, number> = (id) => postOfertaBotItemPublicar(id, requestOptions);
+  return useMutation<Awaited<ReturnType<typeof postOfertaBotItemPublicar>>, TError, number, TContext>({ mutationFn, ...mutationOptions });
+};
+
+// Images
+export const getOfertaBotImages = async (params?: GetOfertaBotImagesParams, options?: RequestInit): Promise<{ images: ProductImageCandidate[] }> =>
+  customFetch<{ images: ProductImageCandidate[] }>(`/api/admin/ofertabot/images${params?.limit ? `?limit=${params.limit}` : ''}`, { ...options, method: 'GET' });
+export const getGetOfertaBotImagesQueryKey = (params?: GetOfertaBotImagesParams) => ['/api/admin/ofertabot/images', ...(params ? [params] : [])] as const;
+export const getGetOfertaBotImagesQueryOptions = <TData = Awaited<ReturnType<typeof getOfertaBotImages>>, TError = ErrorType<unknown>>(params?: GetOfertaBotImagesParams, options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getOfertaBotImages>>, TError, TData>, request?: SecondParameter<typeof customFetch> }) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+  const queryKey = queryOptions?.queryKey ?? getGetOfertaBotImagesQueryKey(params);
+  const queryFn: QueryFunction<Awaited<ReturnType<typeof getOfertaBotImages>>> = ({ signal }) => getOfertaBotImages(params, { signal, ...requestOptions });
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<Awaited<ReturnType<typeof getOfertaBotImages>>, TError, TData> & { queryKey: QueryKey };
+};
+export function useGetOfertaBotImages<TData = Awaited<ReturnType<typeof getOfertaBotImages>>, TError = ErrorType<unknown>>(params?: GetOfertaBotImagesParams, options?: { query?: UseQueryOptions<Awaited<ReturnType<typeof getOfertaBotImages>>, TError, TData>, request?: SecondParameter<typeof customFetch> }): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetOfertaBotImagesQueryOptions(params, options);
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & { queryKey: QueryKey };
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+export const postOfertaBotImageAprovarOficial = async (id: number, options?: RequestInit): Promise<{ ok: boolean }> =>
+  customFetch<{ ok: boolean }>(`/api/admin/ofertabot/images/${id}/aprovar-oficial`, { ...options, method: 'POST' });
+export const usePostOfertaBotImageAprovarOficial = <TError = ErrorType<unknown>, TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof postOfertaBotImageAprovarOficial>>, TError, number, TContext>, request?: SecondParameter<typeof customFetch> }): UseMutationResult<Awaited<ReturnType<typeof postOfertaBotImageAprovarOficial>>, TError, number, TContext> => {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof postOfertaBotImageAprovarOficial>>, number> = (id) => postOfertaBotImageAprovarOficial(id, requestOptions);
+  return useMutation<Awaited<ReturnType<typeof postOfertaBotImageAprovarOficial>>, TError, number, TContext>({ mutationFn, ...mutationOptions });
+};
+
+export const postOfertaBotImageRejeitar = async (id: number, options?: RequestInit): Promise<{ ok: boolean }> =>
+  customFetch<{ ok: boolean }>(`/api/admin/ofertabot/images/${id}/rejeitar`, { ...options, method: 'POST' });
+export const usePostOfertaBotImageRejeitar = <TError = ErrorType<unknown>, TContext = unknown>(options?: { mutation?: UseMutationOptions<Awaited<ReturnType<typeof postOfertaBotImageRejeitar>>, TError, number, TContext>, request?: SecondParameter<typeof customFetch> }): UseMutationResult<Awaited<ReturnType<typeof postOfertaBotImageRejeitar>>, TError, number, TContext> => {
+  const { mutation: mutationOptions, request: requestOptions } = options ?? {};
+  const mutationFn: MutationFunction<Awaited<ReturnType<typeof postOfertaBotImageRejeitar>>, number> = (id) => postOfertaBotImageRejeitar(id, requestOptions);
+  return useMutation<Awaited<ReturnType<typeof postOfertaBotImageRejeitar>>, TError, number, TContext>({ mutationFn, ...mutationOptions });
+};
 

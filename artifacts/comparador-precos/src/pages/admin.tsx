@@ -48,6 +48,31 @@ import {
   usePostAdminOfertasIdAnalisarIa,
   usePostAdminOfertasAnalisarIaLote,
   usePatchAdminOfertasIdAplicarCorrecao,
+  useGetOfertaBotStats,
+  useGetOfertaBotSources,
+  usePostOfertaBotSource,
+  usePatchOfertaBotSource,
+  usePostOfertaBotRunNow,
+  useGetOfertaBotImports,
+  useGetOfertaBotRevisao,
+  usePostOfertaBotItemAprovar,
+  usePostOfertaBotItemRejeitar,
+  usePostOfertaBotItemPublicar,
+  usePostOfertaBotImportPublicar,
+  useGetOfertaBotImages,
+  usePostOfertaBotImageAprovarOficial,
+  usePostOfertaBotImageRejeitar,
+  getGetOfertaBotStatsQueryKey,
+  getGetOfertaBotSourcesQueryKey,
+  getGetOfertaBotImportsQueryKey,
+  getGetOfertaBotRevisaoQueryKey,
+  getGetOfertaBotImagesQueryKey,
+  type FolhetoSource,
+  type FolhetoImport,
+  type FolhetoImportItem,
+  type ProductImageCandidate,
+  type OfertaBotStats,
+  type CreateFolhetoSourceBody,
   type AdminOferta,
   type AdminOfertaAudit,
   type AdminOfertaPage,
@@ -121,7 +146,7 @@ type Tab =
   | "analytics-avancado" | "mercados" | "validacao" | "recompensas" | "sorteios"
   | "logs" | "dicionario" | "fundadores" | "push"
   | "antifraud" | "indicacoes" | "gamificacao" | "viral" | "feed" | "crescimento" | "moderacao"
-  | "produtos";
+  | "produtos" | "ofertabot";
 
 const TAB_MAP: Record<Tab, { label: string; icon: string }> = {
   dashboard:            { label: "Dashboard",     icon: "📊" },
@@ -141,6 +166,7 @@ const TAB_MAP: Record<Tab, { label: string; icon: string }> = {
   validacao:            { label: "Validação",     icon: "🔍" },
   mercados:             { label: "Mercados",      icon: "🏪" },
   produtos:             { label: "Produtos",      icon: "📦" },
+  ofertabot:            { label: "OfertaBot",     icon: "🤖" },
   feed:                 { label: "Feed",          icon: "📱" },
   antifraud:            { label: "Anti-fraude",   icon: "🛡️" },
   push:                 { label: "Notificações",  icon: "🔔" },
@@ -153,7 +179,7 @@ const SIDEBAR_GROUPS: { label: string; items: Tab[] }[] = [
   { label: "Visão Geral",  items: ["dashboard", "stats", "analytics-avancado"] },
   { label: "Crescimento",  items: ["crescimento", "indicacoes"] },
   { label: "Comunidade",   items: ["usuarios", "fundadores", "recompensas", "sorteios"] },
-  { label: "Operações",    items: ["ofertas", "moderacao", "denuncias", "validacao", "mercados", "produtos"] },
+  { label: "Operações",    items: ["ofertas", "moderacao", "denuncias", "validacao", "mercados", "produtos", "ofertabot"] },
   { label: "Plataforma",   items: ["feed", "antifraud", "push"] },
   { label: "Sistema",      items: ["analytics", "dicionario", "logs"] },
 ];
@@ -2033,6 +2059,7 @@ export default function Admin() {
           {tab === "gamificacao" && <GamificacaoTab />}
           {tab === "feed" && <FeedControleTab />}
           {tab === "produtos" && <AdminProdutosTab />}
+          {tab === "ofertabot" && <OfertaBotTab logado={logado} />}
         </AnimatePresence>
           </div>
         </main>
@@ -4001,3 +4028,433 @@ function DicionarioTab() {
     </motion.div>
   );
 }
+
+
+// ── OfertaBot Tab ─────────────────────────────────────────────────────────────
+
+type BotSubTab = "resumo" | "fontes" | "importacoes" | "revisao" | "imagens";
+
+function OfertaBotTab({ logado }: { logado: boolean }) {
+  const qc = useQueryClient();
+  const [subTab, setSubTab] = useState<BotSubTab>("resumo");
+  const [showNovaFonte, setShowNovaFonte] = useState(false);
+  const [editandoFonte, setEditandoFonte] = useState<FolhetoSource | null>(null);
+
+  const { data: stats, isLoading: loadingStats } = useGetOfertaBotStats({
+    query: { queryKey: getGetOfertaBotStatsQueryKey(), enabled: logado && subTab === "resumo", refetchInterval: 30_000 },
+  });
+  const { data: sourcesData, isLoading: loadingSources } = useGetOfertaBotSources({
+    query: { queryKey: getGetOfertaBotSourcesQueryKey(), enabled: logado && subTab === "fontes" },
+  });
+  const { data: importsData, isLoading: loadingImports } = useGetOfertaBotImports(undefined, {
+    query: { queryKey: getGetOfertaBotImportsQueryKey(), enabled: logado && subTab === "importacoes" },
+  });
+  const { data: revisaoData, isLoading: loadingRevisao } = useGetOfertaBotRevisao(undefined, {
+    query: { queryKey: getGetOfertaBotRevisaoQueryKey(), enabled: logado && subTab === "revisao", refetchInterval: 15_000 },
+  });
+  const { data: imagesData, isLoading: loadingImages } = useGetOfertaBotImages(undefined, {
+    query: { queryKey: getGetOfertaBotImagesQueryKey(), enabled: logado && subTab === "imagens" },
+  });
+
+  const { mutate: runNow, isPending: rodando } = usePostOfertaBotRunNow({
+    mutation: { onSuccess: () => { toast({ title: "OfertaBot iniciado!", description: "Buscando folhetos em background." }); } },
+  });
+  const { mutate: criarFonte, isPending: criandoFonte } = usePostOfertaBotSource({
+    mutation: {
+      onSuccess: () => { void qc.invalidateQueries({ queryKey: getGetOfertaBotSourcesQueryKey() }); setShowNovaFonte(false); toast({ title: "Fonte criada!" }); },
+    },
+  });
+  const { mutate: editarFonte } = usePatchOfertaBotSource({
+    mutation: {
+      onSuccess: () => { void qc.invalidateQueries({ queryKey: getGetOfertaBotSourcesQueryKey() }); setEditandoFonte(null); toast({ title: "Fonte atualizada!" }); },
+    },
+  });
+  const { mutate: aprovarItem } = usePostOfertaBotItemAprovar({
+    mutation: { onSuccess: () => { void qc.invalidateQueries({ queryKey: getGetOfertaBotRevisaoQueryKey() }); toast({ title: "Item aprovado" }); } },
+  });
+  const { mutate: rejeitarItem } = usePostOfertaBotItemRejeitar({
+    mutation: { onSuccess: () => { void qc.invalidateQueries({ queryKey: getGetOfertaBotRevisaoQueryKey() }); toast({ title: "Item rejeitado" }); } },
+  });
+  const { mutate: publicarItem } = usePostOfertaBotItemPublicar({
+    mutation: {
+      onSuccess: (data) => { void qc.invalidateQueries({ queryKey: getGetOfertaBotRevisaoQueryKey() }); toast({ title: `Oferta #${data.ofertaId} publicada!` }); },
+    },
+  });
+  const { mutate: publicarImport } = usePostOfertaBotImportPublicar({
+    mutation: {
+      onSuccess: (data) => { void qc.invalidateQueries({ queryKey: getGetOfertaBotImportsQueryKey() }); toast({ title: `${data.publicados} oferta(s) publicada(s)` }); },
+    },
+  });
+  const { mutate: aprovarImagem } = usePostOfertaBotImageAprovarOficial({
+    mutation: { onSuccess: () => { void qc.invalidateQueries({ queryKey: getGetOfertaBotImagesQueryKey() }); toast({ title: "Imagem promovida a oficial!" }); } },
+  });
+  const { mutate: rejeitarImagem } = usePostOfertaBotImageRejeitar({
+    mutation: { onSuccess: () => { void qc.invalidateQueries({ queryKey: getGetOfertaBotImagesQueryKey() }); } },
+  });
+
+  const SUB_TABS: { id: BotSubTab; label: string; icon: string }[] = [
+    { id: "resumo",      label: "Resumo",      icon: "📊" },
+    { id: "fontes",      label: "Fontes",       icon: "🌐" },
+    { id: "importacoes", label: "Importações",  icon: "📥" },
+    { id: "revisao",     label: "Revisão",      icon: "🔍" },
+    { id: "imagens",     label: "Imagens",      icon: "🖼️" },
+  ];
+
+  const statusColor: Record<string, string> = {
+    publicado:     "bg-lime-100 text-lime-700",
+    aprovado:      "bg-blue-100 text-blue-700",
+    revisao:       "bg-amber-100 text-amber-700",
+    pendente_geo:  "bg-orange-100 text-orange-700",
+    duplicado:     "bg-gray-100 text-gray-500",
+    rejeitado:     "bg-red-100 text-red-600",
+    rejeitado_geo: "bg-red-100 text-red-600",
+    erro:          "bg-red-100 text-red-600",
+    extraido:      "bg-purple-100 text-purple-700",
+    baixado:       "bg-sky-100 text-sky-700",
+    encontrado:    "bg-gray-100 text-gray-600",
+  };
+
+  return (
+    <motion.div key="ofertabot" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-base font-bold text-gray-800">🤖 OfertaBot</h2>
+          <p className="text-xs text-gray-500">Motor automático de folhetos — Cuiabá e Várzea Grande</p>
+        </div>
+        <button
+          onClick={() => runNow()}
+          disabled={rodando}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-lime-500 text-white text-xs font-bold hover:bg-lime-400 disabled:opacity-60 transition-colors"
+        >
+          {rodando ? "⏳" : "▶️"} {rodando ? "Rodando..." : "Buscar agora"}
+        </button>
+      </div>
+
+      <div className="flex gap-1 overflow-x-auto pb-1">
+        {SUB_TABS.map(st => (
+          <button
+            key={st.id}
+            onClick={() => setSubTab(st.id)}
+            className={cn(
+              "flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-colors",
+              subTab === st.id ? "bg-lime-500 text-white" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+            )}
+          >
+            {st.icon} {st.label}
+            {st.id === "revisao" && (revisaoData?.items.length ?? 0) > 0 && (
+              <span className="ml-1 bg-white/30 text-white rounded-full text-[10px] px-1 font-black">{revisaoData!.items.length}</span>
+            )}
+          </button>
+        ))}
+      </div>
+
+      {subTab === "resumo" && (
+        <div className="space-y-4">
+          {loadingStats ? (
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-20 rounded-xl bg-gray-100 animate-pulse" />)}</div>
+          ) : stats ? (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {([
+                  { label: "Fontes ativas",   value: stats.fontesAtivas,        icon: "🌐", color: "text-blue-600" },
+                  { label: "Folhetos",         value: stats.folhetosEncontrados, icon: "📥", color: "text-purple-600" },
+                  { label: "Extraídas",        value: stats.ofertasExtraidas,    icon: "🔍", color: "text-amber-600" },
+                  { label: "Publicadas",       value: stats.ofertasPublicadas,   icon: "✅", color: "text-lime-600" },
+                  { label: "Duplicadas",       value: stats.ofertasDuplicadas,   icon: "♻️", color: "text-gray-500" },
+                  { label: "Em revisão",       value: stats.pendentesRevisao,    icon: "⏳", color: "text-orange-600" },
+                  { label: "Rej. por cidade",  value: stats.rejeitadasGeo,       icon: "📍", color: "text-red-500" },
+                ] as const).map(kpi => (
+                  <div key={kpi.label} className="bg-white rounded-xl border border-gray-100 p-3 shadow-sm">
+                    <div className="text-lg">{kpi.icon}</div>
+                    <div className={`text-2xl font-black ${kpi.color}`}>{kpi.value}</div>
+                    <div className="text-[11px] text-gray-500 font-medium">{kpi.label}</div>
+                  </div>
+                ))}
+                <div className={`bg-white rounded-xl border p-3 shadow-sm ${stats.modoAutoPublish ? "border-lime-200" : "border-amber-200"}`}>
+                  <div className="text-lg">{stats.modoAutoPublish ? "🚀" : "🔒"}</div>
+                  <div className={`text-sm font-black ${stats.modoAutoPublish ? "text-lime-600" : "text-amber-600"}`}>{stats.modoAutoPublish ? "Auto" : "Supervisionado"}</div>
+                  <div className="text-[11px] text-gray-500 font-medium">Modo publicação</div>
+                </div>
+              </div>
+              <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-xs text-amber-700">
+                <strong>Escopo geográfico:</strong> Somente Cuiabá-MT e Várzea Grande-MT. Folhetos de outras cidades são rejeitados automaticamente.
+              </div>
+            </>
+          ) : <EmptyState msg="Sem dados ainda. Execute o OfertaBot primeiro." />}
+        </div>
+      )}
+
+      {subTab === "fontes" && (
+        <div className="space-y-3">
+          <div className="flex justify-end">
+            <button onClick={() => setShowNovaFonte(true)} className="px-3 py-1.5 rounded-xl bg-lime-500 text-white text-xs font-bold hover:bg-lime-400 transition-colors">+ Nova fonte</button>
+          </div>
+          {loadingSources ? (
+            <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-16 rounded-xl bg-gray-100 animate-pulse" />)}</div>
+          ) : !sourcesData?.sources.length ? (
+            <EmptyState msg="Nenhuma fonte cadastrada. Adicione fontes de folhetos para Cuiabá ou Várzea Grande." />
+          ) : (
+            <div className="space-y-2">
+              {sourcesData.sources.map(fonte => (
+                <div key={fonte.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <span className="text-sm font-bold text-gray-800 truncate">{fonte.nome}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${fonte.ativo ? "bg-lime-100 text-lime-700" : "bg-gray-100 text-gray-500"}`}>{fonte.ativo ? "Ativa" : "Inativa"}</span>
+                        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-blue-50 text-blue-600 font-semibold">{fonte.tipoFonte}</span>
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5 flex-wrap text-xs text-gray-500">
+                        <span>📍 {fonte.cidade}{fonte.bairro ? `, ${fonte.bairro}` : ""}</span>
+                        {fonte.erroConsecutivo > 0 && <span className="text-red-500 font-semibold">⚠️ {fonte.erroConsecutivo} erro(s)</span>}
+                        {fonte.ultimoCheckAt && <span className="text-gray-400 text-[10px]">Check: {timeAgo(new Date(fonte.ultimoCheckAt))}</span>}
+                      </div>
+                      <a href={fonte.url} target="_blank" rel="noopener noreferrer" className="text-[11px] text-blue-500 hover:underline truncate block mt-0.5">{fonte.url}</a>
+                    </div>
+                    <div className="flex gap-1 flex-shrink-0">
+                      <button onClick={() => setEditandoFonte(fonte)} className="p-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 text-xs">✏️</button>
+                      <button onClick={() => editarFonte({ id: fonte.id, body: { ativo: !fonte.ativo } })} className={`p-1.5 rounded-lg text-xs ${fonte.ativo ? "bg-amber-50 text-amber-600 hover:bg-amber-100" : "bg-lime-50 text-lime-600 hover:bg-lime-100"}`}>{fonte.ativo ? "⏸" : "▶️"}</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+          {(showNovaFonte || editandoFonte) && (
+            <FonteModal
+              fonte={editandoFonte ?? undefined}
+              onClose={() => { setShowNovaFonte(false); setEditandoFonte(null); }}
+              onSave={(data) => { if (editandoFonte) editarFonte({ id: editandoFonte.id, body: data }); else criarFonte(data as CreateFolhetoSourceBody); }}
+              saving={criandoFonte}
+            />
+          )}
+        </div>
+      )}
+
+      {subTab === "importacoes" && (
+        <div className="space-y-2">
+          {loadingImports ? (
+            <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-16 rounded-xl bg-gray-100 animate-pulse" />)}</div>
+          ) : !importsData?.imports.length ? (
+            <EmptyState msg="Nenhum folheto importado ainda. Execute o OfertaBot para buscar folhetos." />
+          ) : (
+            importsData.imports.map(imp => (
+              <div key={imp.id} className="bg-white rounded-xl border border-gray-100 shadow-sm p-3">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      <span className="text-sm font-bold text-gray-800 truncate">{imp.titulo ?? imp.urlFolheto}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold ${statusColor[imp.status] ?? "bg-gray-100 text-gray-500"}`}>{imp.status}</span>
+                    </div>
+                    <div className="flex items-center gap-3 text-[11px] text-gray-500 flex-wrap">
+                      {imp.nomeSource && <span>📍 {imp.nomeSource}</span>}
+                      {imp.cidade && <span>{imp.cidade}</span>}
+                      <span>📅 {new Date(imp.createdAt).toLocaleDateString("pt-BR")}</span>
+                    </div>
+                    <div className="flex items-center gap-2 mt-1 text-[11px] flex-wrap">
+                      <span className="text-purple-600 font-semibold">🔍 {imp.totalExtraido}</span>
+                      <span className="text-lime-600 font-semibold">✅ {imp.totalPublicado}</span>
+                      {imp.totalRevisao > 0 && <span className="text-amber-600 font-semibold">⏳ {imp.totalRevisao}</span>}
+                      {imp.totalDuplicado > 0 && <span className="text-gray-400">♻️ {imp.totalDuplicado}</span>}
+                    </div>
+                    {imp.erro && <p className="text-[10px] text-red-500 mt-1 truncate">⚠️ {imp.erro}</p>}
+                  </div>
+                  {imp.totalRevisao > 0 && (
+                    <button onClick={() => publicarImport(imp.id)} className="flex-shrink-0 px-2 py-1 rounded-lg bg-lime-500 text-white text-[11px] font-bold hover:bg-lime-400">Pub. tudo</button>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      {subTab === "revisao" && (
+        <div className="space-y-2">
+          {loadingRevisao ? (
+            <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-24 rounded-xl bg-gray-100 animate-pulse" />)}</div>
+          ) : !revisaoData?.items.length ? (
+            <EmptyState msg="Nenhum item aguardando revisão. 🎉" />
+          ) : (
+            <>
+              <p className="text-xs text-gray-500">{revisaoData.items.length} item(s) pendente(s)</p>
+              {revisaoData.items.map(item => (
+                <BotItemCard
+                  key={item.id}
+                  item={item}
+                  onAprovar={() => aprovarItem(item.id)}
+                  onRejeitar={(motivo) => rejeitarItem({ id: item.id, motivo })}
+                  onPublicar={() => publicarItem(item.id)}
+                  statusColor={statusColor}
+                />
+              ))}
+            </>
+          )}
+        </div>
+      )}
+
+      {subTab === "imagens" && (
+        <div className="space-y-3">
+          <p className="text-xs text-gray-500">Candidatas a imagem oficial de produto extraídas pelo OfertaBot.</p>
+          {loadingImages ? (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">{Array.from({ length: 6 }).map((_, i) => <div key={i} className="h-40 rounded-xl bg-gray-100 animate-pulse" />)}</div>
+          ) : !imagesData?.images.length ? (
+            <EmptyState msg="Nenhuma candidata de imagem ainda." />
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {imagesData.images.map(img => (
+                <div key={img.id} className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+                  <div className="aspect-square bg-gray-50 flex items-center justify-center overflow-hidden">
+                    <img src={img.imageUrl} alt={img.produtoNormalizado ?? "Produto"} className="w-full h-full object-contain" />
+                  </div>
+                  <div className="p-2">
+                    <p className="text-xs font-semibold text-gray-700 truncate">{img.produtoNormalizado ?? "—"}</p>
+                    {img.qualityScore != null && (
+                      <div className="flex items-center gap-1 mt-1">
+                        <div className="flex-1 h-1 rounded-full bg-gray-100"><div className="h-1 rounded-full bg-lime-400" style={{ width: `${img.qualityScore}%` }} /></div>
+                        <span className="text-[10px] text-gray-500 font-semibold">{img.qualityScore}</span>
+                      </div>
+                    )}
+                    <div className="flex gap-1 mt-2">
+                      <button onClick={() => aprovarImagem(img.id)} className="flex-1 py-1 rounded-lg bg-lime-50 text-lime-700 text-[10px] font-bold hover:bg-lime-100">✅ Oficial</button>
+                      <button onClick={() => rejeitarImagem(img.id)} className="flex-1 py-1 rounded-lg bg-red-50 text-red-500 text-[10px] font-bold hover:bg-red-100">✕</button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+    </motion.div>
+  );
+}
+
+function BotItemCard({ item, onAprovar, onRejeitar, onPublicar, statusColor }: {
+  item: FolhetoImportItem;
+  onAprovar: () => void;
+  onRejeitar: (motivo?: string) => void;
+  onPublicar: () => void;
+  statusColor: Record<string, string>;
+}) {
+  const conf = item.confianca ? Math.round(Number(item.confianca) * 100) : null;
+  return (
+    <div className="bg-white rounded-xl border border-gray-100 shadow-sm p-3">
+      <div className="flex gap-3">
+        {item.cropUrl && (
+          <div className="w-16 h-16 flex-shrink-0 rounded-lg overflow-hidden bg-gray-50 border border-gray-100">
+            <img src={item.cropUrl} alt={item.produto ?? ""} className="w-full h-full object-contain" />
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-start justify-between gap-2">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-bold text-gray-800 truncate">{item.produto ?? "—"}</p>
+              {item.marca && <p className="text-[11px] text-gray-500">{item.marca}</p>}
+            </div>
+            <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-semibold flex-shrink-0 ${statusColor[item.status] ?? "bg-gray-100 text-gray-500"}`}>{item.status}</span>
+          </div>
+          <div className="flex items-center gap-3 mt-1 flex-wrap">
+            {item.preco != null && <span className="text-base font-black text-lime-600">{item.preco.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>}
+            {item.precoNormal != null && item.precoNormal !== item.preco && <span className="text-xs line-through text-gray-400">{item.precoNormal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>}
+            {item.unidade && <span className="text-xs text-gray-500">{item.unidade}</span>}
+            {item.categoria && <span className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">{item.categoria}</span>}
+          </div>
+          <div className="flex items-center gap-3 mt-1 flex-wrap text-[11px] text-gray-400">
+            {item.nomeSource && <span>📍 {item.nomeSource}</span>}
+            {item.cidade && <span>{item.cidade}</span>}
+            {item.validade && <span>📅 {item.validade}</span>}
+            {conf != null && <span className={`font-semibold ${conf >= 85 ? "text-lime-600" : conf >= 65 ? "text-amber-600" : "text-red-500"}`}>🎯 {conf}%</span>}
+          </div>
+          {item.programaClubeName && (
+            <p className="text-[10px] text-blue-600 mt-0.5">🎴 {item.programaClubeName} — {item.precoClube?.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
+          )}
+        </div>
+      </div>
+      <div className="flex gap-1.5 mt-3">
+        <button onClick={onPublicar} className="flex-1 py-1.5 rounded-xl bg-lime-500 text-white text-xs font-bold hover:bg-lime-400 transition-colors">✅ Publicar</button>
+        <button onClick={onAprovar} className="flex-1 py-1.5 rounded-xl bg-blue-50 text-blue-700 text-xs font-bold hover:bg-blue-100 transition-colors">👍 Aprovar</button>
+        <button onClick={() => onRejeitar()} className="flex-1 py-1.5 rounded-xl bg-red-50 text-red-500 text-xs font-bold hover:bg-red-100 transition-colors">✕ Rejeitar</button>
+        {item.urlFolheto && <a href={item.urlFolheto} target="_blank" rel="noopener noreferrer" className="px-2 py-1.5 rounded-xl bg-gray-100 text-gray-600 text-xs font-bold hover:bg-gray-200">🔗</a>}
+      </div>
+    </div>
+  );
+}
+
+function FonteModal({ fonte, onClose, onSave, saving }: {
+  fonte?: FolhetoSource;
+  onClose: () => void;
+  onSave: (data: Partial<CreateFolhetoSourceBody> & { ativo?: boolean }) => void;
+  saving: boolean;
+}) {
+  const [form, setForm] = useState({
+    nome:       fonte?.nome ?? "",
+    cidade:     fonte?.cidade ?? "Cuiabá",
+    bairro:     fonte?.bairro ?? "",
+    estado:     fonte?.estado ?? "MT",
+    tipoFonte:  (fonte?.tipoFonte ?? "manual") as FolhetoSource["tipoFonte"],
+    url:        fonte?.url ?? "",
+    prioridade: String(fonte?.prioridade ?? 0),
+  });
+  const f = (k: keyof typeof form) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => setForm(prev => ({ ...prev, [k]: e.target.value }));
+
+  return (
+    <div className="fixed inset-0 bg-black/40 z-50 flex items-end sm:items-center justify-center p-4">
+      <div className="bg-white rounded-2xl shadow-xl w-full max-w-md">
+        <div className="p-4 border-b border-gray-100">
+          <h3 className="text-sm font-bold text-gray-800">{fonte ? "Editar fonte" : "Nova fonte de folheto"}</h3>
+          <p className="text-xs text-gray-500">Apenas Cuiabá-MT e Várzea Grande-MT</p>
+        </div>
+        <div className="p-4 space-y-3">
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Nome *</label>
+            <input value={form.nome} onChange={f("nome")} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-lime-300" placeholder="Ex: Comper Miguel Sutil Cuiabá" />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Cidade *</label>
+              <select value={form.cidade} onChange={f("cidade")} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-lime-300">
+                <option>Cuiabá</option>
+                <option>Várzea Grande</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">Bairro</label>
+              <input value={form.bairro} onChange={f("bairro")} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-lime-300" placeholder="Ex: Miguel Sutil" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Tipo de fonte</label>
+            <select value={form.tipoFonte} onChange={f("tipoFonte")} className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-lime-300">
+              <option value="manual">Manual (URL de imagem)</option>
+              <option value="site">Site</option>
+              <option value="instagram">Instagram</option>
+              <option value="facebook">Facebook</option>
+              <option value="agregador">Agregador</option>
+              <option value="app_site">App/Site</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">URL do folheto *</label>
+            <input value={form.url} onChange={f("url")} type="url" className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-lime-300" placeholder="https://..." />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">Prioridade (maior = primeiro)</label>
+            <input value={form.prioridade} onChange={f("prioridade")} type="number" className="w-full border border-gray-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-lime-300" />
+          </div>
+        </div>
+        <div className="p-4 border-t border-gray-100 flex gap-3">
+          <button onClick={onClose} className="flex-1 py-2 rounded-xl border border-gray-200 text-sm font-bold text-gray-600 hover:bg-gray-50">Cancelar</button>
+          <button
+            onClick={() => onSave({ ...form, prioridade: Number(form.prioridade) })}
+            disabled={saving || !form.nome || !form.url}
+            className="flex-1 py-2 rounded-xl bg-lime-500 text-white text-sm font-bold hover:bg-lime-400 disabled:opacity-60"
+          >
+            {saving ? "Salvando..." : "Salvar"}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+

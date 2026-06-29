@@ -1299,3 +1299,109 @@ export interface ComparacaoResult {
   economiaPercentual?: number | null;
   ranking: RankingItem[];
 }
+
+// ── OfertaBot Types ────────────────────────────────────────────────────────────
+
+export interface OfertaBotStats {
+  fontesAtivas: number;
+  folhetosEncontrados: number;
+  ofertasExtraidas: number;
+  ofertasPublicadas: number;
+  ofertasDuplicadas: number;
+  pendentesRevisao: number;
+  rejeitadasGeo: number;
+  modoAutoPublish: boolean;
+}
+
+export interface FolhetoSource {
+  id: number;
+  mercadoId?: number | null;
+  nome: string;
+  cidade: string;
+  bairro?: string | null;
+  estado: string;
+  tipoFonte: "site" | "instagram" | "facebook" | "agregador" | "app_site" | "manual";
+  url: string;
+  ativo: boolean;
+  prioridade: number;
+  ultimoCheckAt?: string | null;
+  erroConsecutivo: number;
+  createdAt: string;
+}
+
+export interface CreateFolhetoSourceBody {
+  mercadoId?: number;
+  nome: string;
+  cidade: string;
+  bairro?: string;
+  estado?: string;
+  tipoFonte?: FolhetoSource["tipoFonte"];
+  url: string;
+  prioridade?: number;
+}
+
+export interface FolhetoImport {
+  id: number;
+  sourceId?: number | null;
+  mercadoId?: number | null;
+  cidade?: string | null;
+  bairro?: string | null;
+  urlFolheto: string;
+  titulo?: string | null;
+  validadeInicio?: string | null;
+  validadeFim?: string | null;
+  status: "encontrado" | "baixado" | "extraido" | "revisao" | "publicado" | "erro" | "pendente_geo" | "rejeitado_geo";
+  totalExtraido: number;
+  totalPublicado: number;
+  totalDuplicado: number;
+  totalRevisao: number;
+  totalRejeitado: number;
+  erro?: string | null;
+  createdAt: string;
+  nomeSource?: string | null;
+}
+
+export interface FolhetoImportItem {
+  id: number;
+  importId: number;
+  mercadoId?: number | null;
+  cidade?: string | null;
+  bairro?: string | null;
+  produto?: string | null;
+  produtoNormalizado?: string | null;
+  marca?: string | null;
+  preco?: number | null;
+  precoNormal?: number | null;
+  precoClube?: number | null;
+  programaClubeName?: string | null;
+  tipoPreco?: "normal" | "clube" | "ambos" | "desconhecido" | null;
+  unidade?: string | null;
+  categoria?: string | null;
+  validade?: string | null;
+  confianca?: string | null;
+  status: "aprovado" | "rejeitado" | "publicado" | "duplicado" | "erro" | "revisao" | "pendente_geo";
+  ofertaId?: number | null;
+  cropUrl?: string | null;
+  imageQualityScore?: number | null;
+  motivoRejeicao?: string | null;
+  createdAt: string;
+  nomeSource?: string | null;
+  urlFolheto?: string | null;
+}
+
+export interface ProductImageCandidate {
+  id: number;
+  produtoNormalizado?: string | null;
+  produtoId?: string | null;
+  origem: "folheto_crop" | "admin_upload" | "usuario" | "catalogo";
+  imageUrl: string;
+  qualityScore?: number | null;
+  status: "candidato" | "aprovado" | "rejeitado" | "oficial";
+  sourceImportItemId?: number | null;
+  createdAt: string;
+}
+
+export type GetOfertaBotSourcesParams = Record<string, never>;
+export type GetOfertaBotImportsParams = { limit?: number; cursor?: number };
+export type GetOfertaBotRevisaoParams = { limit?: number; cursor?: number };
+export type GetOfertaBotImagesParams = { limit?: number };
