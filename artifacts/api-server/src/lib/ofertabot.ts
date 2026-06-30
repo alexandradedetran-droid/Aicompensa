@@ -274,7 +274,7 @@ export async function publicarItem(
         programaClubeName: item.programaClubeName ?? undefined,
         tipoPreco: (item.tipoPreco as "normal" | "clube" | "ambos" | "desconhecido") ?? "desconhecido",
         unidade: item.unidade ?? "un",
-        mercado: importRecord.titulo ?? source.nome,
+        mercado: source.nome,
         mercadoId: item.mercadoId,
         bairro: item.bairro ?? source.bairro ?? undefined,
         cidade: item.cidade ?? source.cidade,
