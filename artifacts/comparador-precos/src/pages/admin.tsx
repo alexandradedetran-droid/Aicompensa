@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { toast } from "@/hooks/use-toast";
 import {
@@ -4032,13 +4032,44 @@ function DicionarioTab() {
 
 // ── OfertaBot Tab ─────────────────────────────────────────────────────────────
 
-type BotSubTab = "resumo" | "fontes" | "importacoes" | "revisao" | "imagens";
+type BotSubTab = "resumo" | "execucoes" | "detalhe" | "saude" | "mercados" | "fontes" | "importacoes" | "revisao" | "imagens";
+type BotRunMode = "shopfully" | "site" | "completo";
+type OfertaBotOperacao = { bot: { currentRun: { mode: BotRunMode; startedAt: string } | null; lastRun: { mode: BotRunMode; startedAt: string; finishedAt: string; status: string; error?: string } | null; nextRunAt: string; status: string }; folhetos: Record<string, number>; produtos: Record<string, number>; imagens: Record<string, number>; ia: Record<string, number | null>; estatisticasMes: Record<string, number>; scheduler: { horarios: string[] }; pipeline: string[] };
+type OfertaBotHealth = { services: { name: string; status: string; lastSuccessAt?: string | null; attempts: number }[] };
+type OfertaBotMercados = { mercados: { nome: string; shopfully: boolean; site: boolean | "em_desenvolvimento"; fontes: unknown[] }[] };
+type OfertaBotImportDetail = { import: FolhetoImport; items: FolhetoImportItem[]; execution?: { id: number; fonte?: string; mercado?: string | null; folhetoThumbUrl?: string | null; paginas: number; durationMs: number; logs: { etapa: string; status: string; at?: string }[] } };
 
 function OfertaBotTab({ logado }: { logado: boolean }) {
   const qc = useQueryClient();
   const [subTab, setSubTab] = useState<BotSubTab>("resumo");
   const [showNovaFonte, setShowNovaFonte] = useState(false);
   const [editandoFonte, setEditandoFonte] = useState<FolhetoSource | null>(null);
+  const [runMode, setRunMode] = useState<BotRunMode>("completo");
+  const [runPending, setRunPending] = useState(false);
+  const [selectedImportId, setSelectedImportId] = useState<number | null>(null);
+
+  const { data: operacao, isLoading: loadingOperacao } = useQuery<OfertaBotOperacao>({
+    queryKey: ["ofertabot", "operacao"],
+    enabled: logado && subTab === "resumo",
+    refetchInterval: 30_000,
+    queryFn: () => customFetch("/api/admin/ofertabot/operacao", { responseType: "json" }),
+  });
+  const { data: healthData, isLoading: loadingHealth } = useQuery<OfertaBotHealth>({
+    queryKey: ["ofertabot", "health"],
+    enabled: logado && subTab === "saude",
+    refetchInterval: 30_000,
+    queryFn: () => customFetch("/api/admin/ofertabot/health", { responseType: "json" }),
+  });
+  const { data: mercadosData, isLoading: loadingMercados } = useQuery<OfertaBotMercados>({
+    queryKey: ["ofertabot", "mercados"],
+    enabled: logado && subTab === "mercados",
+    queryFn: () => customFetch("/api/admin/ofertabot/mercados", { responseType: "json" }),
+  });
+  const { data: importDetail, isLoading: loadingDetail } = useQuery<OfertaBotImportDetail>({
+    queryKey: ["ofertabot", "import-detail", selectedImportId],
+    enabled: logado && subTab === "detalhe" && selectedImportId != null,
+    queryFn: () => customFetch(`/api/admin/ofertabot/imports/${selectedImportId}`, { responseType: "json" }),
+  });
 
   const { data: stats, isLoading: loadingStats } = useGetOfertaBotStats({
     query: { queryKey: getGetOfertaBotStatsQueryKey(), enabled: logado && subTab === "resumo", refetchInterval: 30_000 },
@@ -4056,9 +4087,23 @@ function OfertaBotTab({ logado }: { logado: boolean }) {
     query: { queryKey: getGetOfertaBotImagesQueryKey(), enabled: logado && subTab === "imagens" },
   });
 
-  const { mutate: runNow, isPending: rodando } = usePostOfertaBotRunNow({
-    mutation: { onSuccess: () => { toast({ title: "OfertaBot iniciado!", description: "Buscando folhetos em background." }); } },
-  });
+  const executarAgora = async () => {
+    setRunPending(true);
+    try {
+      await customFetch("/api/admin/ofertabot/run-now", {
+        method: "POST",
+        body: JSON.stringify({ mode: runMode }),
+        responseType: "json",
+      });
+      await qc.invalidateQueries({ queryKey: ["ofertabot", "operacao"] });
+      await qc.invalidateQueries({ queryKey: getGetOfertaBotImportsQueryKey() });
+      toast({ title: "OfertaBot iniciado!", description: `Modo: ${runMode}` });
+    } catch (error) {
+      toast({ title: "OfertaBot não iniciou", description: error instanceof Error ? error.message : "Tente novamente." });
+    } finally {
+      setRunPending(false);
+    }
+  };
   const { mutate: criarFonte, isPending: criandoFonte } = usePostOfertaBotSource({
     mutation: {
       onSuccess: () => { void qc.invalidateQueries({ queryKey: getGetOfertaBotSourcesQueryKey() }); setShowNovaFonte(false); toast({ title: "Fonte criada!" }); },
@@ -4093,11 +4138,13 @@ function OfertaBotTab({ logado }: { logado: boolean }) {
   });
 
   const SUB_TABS: { id: BotSubTab; label: string; icon: string }[] = [
-    { id: "resumo",      label: "Resumo",      icon: "📊" },
-    { id: "fontes",      label: "Fontes",       icon: "🌐" },
-    { id: "importacoes", label: "Importações",  icon: "📥" },
-    { id: "revisao",     label: "Revisão",      icon: "🔍" },
-    { id: "imagens",     label: "Imagens",      icon: "🖼️" },
+    { id: "resumo",      label: "Operação",     icon: "*" },
+    { id: "execucoes",   label: "Execuções",    icon: "*" },
+    { id: "saude",       label: "Saúde",        icon: "*" },
+    { id: "mercados",    label: "Mercados",     icon: "*" },
+    { id: "fontes",      label: "Fontes",       icon: "*" },
+    { id: "revisao",     label: "Revisão",      icon: "*" },
+    { id: "imagens",     label: "Imagens",      icon: "*" },
   ];
 
   const statusColor: Record<string, string> = {
@@ -4121,13 +4168,24 @@ function OfertaBotTab({ logado }: { logado: boolean }) {
           <h2 className="text-base font-bold text-gray-800">🤖 OfertaBot</h2>
           <p className="text-xs text-gray-500">Motor automático de folhetos — Cuiabá e Várzea Grande</p>
         </div>
-        <button
-          onClick={() => runNow()}
-          disabled={rodando}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-lime-500 text-white text-xs font-bold hover:bg-lime-400 disabled:opacity-60 transition-colors"
-        >
-          {rodando ? "⏳" : "▶️"} {rodando ? "Rodando..." : "Buscar agora"}
-        </button>
+        <div className="flex items-center gap-2">
+          <select
+            value={runMode}
+            onChange={(e) => setRunMode(e.target.value as BotRunMode)}
+            className="h-9 rounded-lg border border-gray-200 bg-white px-2 text-xs font-semibold text-gray-700"
+          >
+            <option value="shopfully">Apenas ShopFully</option>
+            <option value="site">Apenas Site</option>
+            <option value="completo">Completo</option>
+          </select>
+          <button
+            onClick={() => void executarAgora()}
+            disabled={runPending || !!operacao?.bot.currentRun}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-lime-500 text-white text-xs font-bold hover:bg-lime-400 disabled:opacity-60 transition-colors"
+          >
+            {runPending || operacao?.bot.currentRun ? "Rodando..." : "Executar OfertaBot"}
+          </button>
+        </div>
       </div>
 
       <div className="flex gap-1 overflow-x-auto pb-1">
@@ -4150,6 +4208,26 @@ function OfertaBotTab({ logado }: { logado: boolean }) {
 
       {subTab === "resumo" && (
         <div className="space-y-4">
+          {loadingOperacao ? (
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-28 rounded-lg bg-gray-100 animate-pulse" />)}</div>
+          ) : operacao && (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                <BotOpsCard title="OfertaBot" tone="green" items={[["execução atual", operacao.bot.currentRun ? operacao.bot.currentRun.mode : "Livre"], ["Última execução", operacao.bot.lastRun ? new Date(operacao.bot.lastRun.finishedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "-"], ["Próxima execução", new Date(operacao.bot.nextRunAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })], ["Status", operacao.bot.status]]} />
+                <BotOpsCard title="Folhetos" items={[["Encontrados hoje", operacao.folhetos.encontradosHoje], ["Processados", operacao.folhetos.processados], ["Falhas", operacao.folhetos.falhas], ["Tempo médio", formatDuration(operacao.folhetos.tempoMedioMs)]]} />
+                <BotOpsCard title="Produtos" items={[["Extraídos", operacao.produtos.extraidos], ["Em Revisão", operacao.produtos.emRevisao], ["Publicados", operacao.produtos.publicados], ["Duplicados", operacao.produtos.duplicados], ["Rejeitados", operacao.produtos.rejeitados]]} />
+                <BotOpsCard title="Imagens" items={[["Open Food Facts", operacao.imagens.openFoodFacts], ["Site Mercado", operacao.imagens.siteMercado], ["Crop", operacao.imagens.crop], ["Catálogo", operacao.imagens.catalogo], ["Upload Admin", operacao.imagens.uploadAdmin]]} />
+                <BotOpsCard title="IA" items={[["Taxa de acerto", `${operacao.ia.taxaAcerto ?? 0}%`], ["Confiança média", `${operacao.ia.confiancaMedia ?? 0}%`], ["Tempo Gemini", operacao.ia.tempoGeminiMs ? formatDuration(operacao.ia.tempoGeminiMs) : "-"], ["OCR médio", operacao.ia.ocrMedioMs ? formatDuration(operacao.ia.ocrMedioMs) : "-"]]} />
+              </div>
+              <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+                {Object.entries({ "Produtos publicados": operacao.estatisticasMes.produtosPublicados, "Economia gerada": R(operacao.estatisticasMes.economiaGerada), "Mercados monitorados": operacao.estatisticasMes.mercadosMonitorados, "Folhetos": operacao.estatisticasMes.folhetos, "OCR": `${operacao.estatisticasMes.ocr}%`, "Duplicidade evitada": operacao.estatisticasMes.duplicidadeEvitada }).map(([label, value]) => (
+                  <div key={label} className="rounded-lg border border-gray-100 bg-white p-3 shadow-sm"><div className="text-lg font-black text-gray-900">{value}</div><div className="text-[11px] font-semibold text-gray-500">{label}</div></div>
+                ))}
+              </div>
+              <div className="rounded-lg border border-lime-100 bg-lime-50 p-3"><div className="text-xs font-bold text-lime-800">Scheduler: {operacao.scheduler.horarios.join(" · ")}</div><div className="mt-2 flex flex-wrap gap-1.5">{operacao.pipeline.map((step) => <span key={step} className="rounded-full bg-white px-2 py-1 text-[10px] font-bold text-lime-700">{step}</span>)}</div></div>
+            </>
+          )}
+
           {loadingStats ? (
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">{Array.from({ length: 8 }).map((_, i) => <div key={i} className="h-20 rounded-xl bg-gray-100 animate-pulse" />)}</div>
           ) : stats ? (
@@ -4184,6 +4262,83 @@ function OfertaBotTab({ logado }: { logado: boolean }) {
         </div>
       )}
 
+      {subTab === "execucoes" && (
+        <div className="space-y-2">
+          {loadingImports ? (
+            <div className="space-y-2">{Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-20 rounded-lg bg-gray-100 animate-pulse" />)}</div>
+          ) : !importsData?.imports.length ? (
+            <EmptyState msg="Nenhuma execução registrada ainda." />
+          ) : importsData.imports.map((imp) => (
+            <button key={imp.id} onClick={() => { setSelectedImportId(imp.id); setSubTab("detalhe"); }} className="w-full text-left rounded-lg border border-gray-100 bg-white p-3 shadow-sm hover:border-lime-200 hover:bg-lime-50/40">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-sm font-black text-gray-800">execução #{imp.id}</div>
+                  <div className="text-xs text-gray-500">{imp.nomeSource ?? imp.titulo ?? "OfertaBot"} · {new Date(imp.createdAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</div>
+                </div>
+                <span className={`rounded-full px-2 py-1 text-[10px] font-bold ${statusColor[imp.status] ?? "bg-gray-100 text-gray-600"}`}>{imp.status}</span>
+              </div>
+              <div className="mt-3 grid grid-cols-5 gap-2 text-center text-[11px]">
+                <MiniMetric label="Produtos" value={imp.totalExtraido} />
+                <MiniMetric label="Novos" value={Math.max(0, imp.totalExtraido - imp.totalDuplicado)} />
+                <MiniMetric label="Duplicados" value={imp.totalDuplicado} />
+                <MiniMetric label="Publicados" value={imp.totalPublicado} />
+                <MiniMetric label="Rejeitados" value={imp.totalRejeitado} />
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+
+      {subTab === "detalhe" && (
+        <div className="space-y-3">
+          <button onClick={() => setSubTab("execucoes")} className="text-xs font-bold text-lime-700">? Voltar para Execuções</button>
+          {loadingDetail ? <div className="h-48 rounded-lg bg-gray-100 animate-pulse" /> : importDetail?.execution ? (
+            <div className="rounded-lg border border-gray-100 bg-white p-4 shadow-sm">
+              <div className="flex gap-4">
+                {importDetail.execution.folhetoThumbUrl && <img src={importDetail.execution.folhetoThumbUrl} alt="Folheto" className="h-24 w-24 rounded-lg border border-gray-100 object-contain" />}
+                <div className="flex-1">
+                  <div className="text-sm font-black text-gray-900">execução #{importDetail.import.id}</div>
+                  <div className="mt-1 grid grid-cols-2 gap-2 text-xs text-gray-600">
+                    <span>Fonte: <b>{importDetail.execution.fonte}</b></span>
+                    <span>Mercado: <b>{importDetail.execution.mercado}</b></span>
+                    <span>Páginas: <b>{importDetail.execution.paginas}</b></span>
+                    <span>Tempo: <b>{formatDuration(importDetail.execution.durationMs)}</b></span>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 grid grid-cols-2 md:grid-cols-6 gap-2">
+                {importDetail.execution.logs.map((log) => <div key={log.etapa} className="rounded-lg bg-gray-50 p-2"><div className="text-xs font-black text-gray-800">{log.etapa}</div><div className="text-[11px] font-semibold text-gray-500">{log.status}</div></div>)}
+              </div>
+            </div>
+          ) : <EmptyState msg="Selecione uma execução no histórico." />}
+        </div>
+      )}
+
+      {subTab === "saude" && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {loadingHealth ? Array.from({ length: 5 }).map((_, i) => <div key={i} className="h-20 rounded-lg bg-gray-100 animate-pulse" />) : healthData?.services.map((service) => (
+            <div key={service.name} className="rounded-lg border border-gray-100 bg-white p-3 shadow-sm">
+              <div className="flex items-center justify-between"><div className="text-sm font-black text-gray-800">{service.name}</div><span className={service.status === "online" ? "text-lime-600" : "text-red-500"}>{service.status === "online" ? "✓ Online" : "● Atenção"}</span></div>
+              <div className="mt-1 text-xs text-gray-500">Último sucesso: {service.lastSuccessAt ? new Date(service.lastSuccessAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" }) : "-"}</div>
+              <div className="text-xs text-gray-500">Tentativas: {service.attempts}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {subTab === "mercados" && (
+        <div className="space-y-2">
+          {loadingMercados ? <div className="h-24 rounded-lg bg-gray-100 animate-pulse" /> : mercadosData?.mercados.map((mercado) => (
+            <div key={mercado.nome} className="rounded-lg border border-gray-100 bg-white p-3 shadow-sm">
+              <div className="text-sm font-black text-gray-800">{mercado.nome}</div>
+              <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
+                <div className="rounded-lg bg-lime-50 p-2 text-lime-700 font-bold">ShopFully {mercado.shopfully ? "✓" : "-"}</div>
+                <div className="rounded-lg bg-gray-50 p-2 text-gray-700 font-bold">Site {mercado.site === true ? "✓" : "Em desenvolvimento"}</div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {subTab === "fontes" && (
         <div className="space-y-3">
           <div className="flex justify-end">
@@ -4330,6 +4485,32 @@ function OfertaBotTab({ logado }: { logado: boolean }) {
   );
 }
 
+function formatDuration(ms?: number | null): string {
+  if (!ms || ms <= 0) return "-";
+  const seconds = Math.round(ms / 1000);
+  if (seconds < 60) return `${seconds}s`;
+  return `${Math.floor(seconds / 60)}m${String(seconds % 60).padStart(2, "0")}s`;
+}
+
+function BotOpsCard({ title, items, tone = "neutral" }: { title: string; items: Array<[string, React.ReactNode]>; tone?: "green" | "neutral" }) {
+  return (
+    <div className={cn("rounded-lg border bg-white p-3 shadow-sm", tone === "green" ? "border-lime-200" : "border-gray-100")}>
+      <div className="mb-2 text-sm font-black text-gray-900">{title}</div>
+      <div className="space-y-1">
+        {items.map(([label, value]) => (
+          <div key={label} className="flex items-center justify-between gap-2 text-[11px]">
+            <span className="font-semibold text-gray-500">{label}</span>
+            <span className="max-w-[55%] truncate text-right font-black text-gray-800">{value}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MiniMetric({ label, value }: { label: string; value: React.ReactNode }) {
+  return <div className="rounded-lg bg-gray-50 p-2"><div className="font-black text-gray-800">{value}</div><div className="text-gray-500">{label}</div></div>;
+}
 function BotItemCard({ item, onAprovar, onRejeitar, onPublicar, statusColor }: {
   item: FolhetoImportItem;
   onAprovar: () => void;
@@ -4359,9 +4540,12 @@ function BotItemCard({ item, onAprovar, onRejeitar, onPublicar, statusColor }: {
             {item.precoNormal != null && item.precoNormal !== item.preco && <span className="text-xs line-through text-gray-400">{item.precoNormal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</span>}
             {item.unidade && <span className="text-xs text-gray-500">{item.unidade}</span>}
             {item.categoria && <span className="text-[10px] bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded-full">{item.categoria}</span>}
+            {item.origem && <span className="text-[10px] bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded-full">{item.origem}</span>}
           </div>
           <div className="flex items-center gap-3 mt-1 flex-wrap text-[11px] text-gray-400">
             {item.nomeSource && <span>📍 {item.nomeSource}</span>}
+            {item.loja && <span>{item.loja}</span>}
+            {item.cep && <span>CEP {item.cep}</span>}
             {item.cidade && <span>{item.cidade}</span>}
             {item.validade && <span>📅 {item.validade}</span>}
             {conf != null && <span className={`font-semibold ${conf >= 85 ? "text-lime-600" : conf >= 65 ? "text-amber-600" : "text-red-500"}`}>🎯 {conf}%</span>}
@@ -4457,4 +4641,3 @@ function FonteModal({ fonte, onClose, onSave, saving }: {
     </div>
   );
 }
-
