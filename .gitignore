@@ -41,6 +41,11 @@ testem.log
 .DS_Store
 Thumbs.db
 
+# Large binary archives
+*.tar.gz
+*.tar.bz2
+*.zip
+
 .cursor/rules/nx-rules.mdc
 .github/instructions/nx.instructions.md
 
