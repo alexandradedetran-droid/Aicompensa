@@ -7,7 +7,8 @@ import { db, folhetoSourcesTable, folhetoImportsTable, folhetoImportItemsTable, 
 import { eq, desc, and, inArray, sql, count, gte } from "drizzle-orm";
 import { requireAdminConfigured, requireAdminToken } from "../middleware/admin-auth";
 import { runOfertaBot, publicarItemAdmin } from "../lib/ofertabot";
-import { runAtacadaoSiteImporter } from "../lib/atacadao-site-importer";
+import { runAtacadaoSiteImporter, importAtacadaoPayload } from "../lib/atacadao-site-importer";
+import { scrapeAtacadaoAPI } from "../lib/atacadao-api-scraper";
 import { releaseOfertaBotRunLock, tryAcquireOfertaBotRunLock } from "../lib/ofertabot-run-lock";
 import { logger } from "../lib/logger";
 
@@ -18,6 +19,9 @@ type RunMode = "shopfully" | "site" | "completo";
 const RUN_HOURS = [6, 12, 18];
 let currentRun: { mode: RunMode; startedAt: Date } | null = null;
 let lastRun: { mode: RunMode; startedAt: Date; finishedAt: Date; status: "concluido" | "erro"; result?: unknown; error?: string } | null = null;
+
+let currentAtacadaoRun: { startedAt: Date } | null = null;
+let lastAtacadaoRun: { startedAt: Date; finishedAt: Date; status: "concluido" | "erro"; result?: unknown; error?: string } | null = null;
 
 // All time comparisons use BRT (UTC-3) so stats match the scheduler's trigger hours.
 function brtNow(): Date { return new Date(Date.now() - 3 * 60 * 60 * 1000); }
@@ -317,6 +321,38 @@ router.post("/api/admin/ofertabot/import-atacadao-site", ...guard, async (req, r
     logger.error({ err, jsonPath }, "[admin-ofertabot] import-atacadao-site error");
     res.status(500).json({ error: err instanceof Error ? err.message : "Erro ao importar Atacadão site" });
   }
+});
+
+// POST /api/admin/ofertabot/run-atacadao
+// Dispara o scraper VTEX do Atacadão sob demanda, fora do horário do scheduler (6h/12h/18h BRT).
+router.post("/api/admin/ofertabot/run-atacadao", ...guard, async (_req, res) => {
+  if (currentAtacadaoRun) {
+    res.status(409).json({ error: "Scraper do Atacadão já está em execução", currentAtacadaoRun });
+    return;
+  }
+
+  currentAtacadaoRun = { startedAt: new Date() };
+  res.json({ ok: true, message: "Scraper do Atacadão iniciado em background" });
+
+  setImmediate(async () => {
+    const startedAt = currentAtacadaoRun?.startedAt ?? new Date();
+    try {
+      const payload = await scrapeAtacadaoAPI();
+      const result = await importAtacadaoPayload(payload);
+      lastAtacadaoRun = { startedAt, finishedAt: new Date(), status: "concluido", result };
+      logger.info({ result }, "[admin-ofertabot] run-atacadao concluído");
+    } catch (err) {
+      lastAtacadaoRun = { startedAt, finishedAt: new Date(), status: "erro", error: err instanceof Error ? err.message : String(err) };
+      logger.error({ err }, "[admin-ofertabot] run-atacadao falhou");
+    } finally {
+      currentAtacadaoRun = null;
+    }
+  });
+});
+
+// GET /api/admin/ofertabot/run-atacadao
+router.get("/api/admin/ofertabot/run-atacadao", ...guard, async (_req, res) => {
+  res.json({ currentAtacadaoRun, lastAtacadaoRun });
 });
 
 // ── Imports ───────────────────────────────────────────────────────────────────
