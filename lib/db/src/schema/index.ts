@@ -1038,6 +1038,12 @@ export const folhetoImportItemsTable = pgTable("folheto_import_items", {
   unidade:             text("unidade"),
   categoria:           text("categoria"),
   validade:            date("validade"),
+  origem:              text("origem").notNull().default("ofertabot"),
+  sourceUrl:           text("source_url"),
+  imageOriginalUrl:    text("image_original_url"),
+  cep:                 text("cep"),
+  loja:                text("loja"),
+  campanha:            text("campanha"),
   confianca:           numeric("confianca", { precision: 5, scale: 4 }),
   status:              text("status").notNull().default("revisao")
     .$type<"aprovado" | "rejeitado" | "publicado" | "duplicado" | "erro" | "revisao" | "pendente_geo">(),
@@ -1053,6 +1059,7 @@ export const folhetoImportItemsTable = pgTable("folheto_import_items", {
   index("idx_fii_import").on(t.importId),
   index("idx_fii_status").on(t.status),
   index("idx_fii_mercado").on(t.mercadoId),
+  index("idx_fii_origem").on(t.origem),
 ]);
 export type FolhetoImportItem = typeof folhetoImportItemsTable.$inferSelect;
 
@@ -1062,7 +1069,7 @@ export const productImageCandidatesTable = pgTable("product_image_candidates", {
   produtoNormalizado:  text("produto_normalizado"),
   produtoId:           uuid("produto_id").references(() => produtosTable.id, { onDelete: "set null" }),
   origem:              text("origem").notNull().default("folheto_crop")
-    .$type<"folheto_crop" | "admin_upload" | "usuario" | "catalogo">(),
+    .$type<"folheto_crop" | "admin_upload" | "usuario" | "catalogo" | "site_mercado">(),
   imageUrl:            text("image_url").notNull(),
   qualityScore:        integer("quality_score"),
   status:              text("status").notNull().default("candidato")

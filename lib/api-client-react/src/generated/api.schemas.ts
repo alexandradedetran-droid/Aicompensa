@@ -1038,6 +1038,10 @@ export type ListOfertasParams = {
    */
   categoria?: string;
   /**
+   * Filter by city
+   */
+  cidade?: string;
+  /**
    * User latitude
    */
   lat?: number;
@@ -1378,6 +1382,12 @@ export interface FolhetoImportItem {
   unidade?: string | null;
   categoria?: string | null;
   validade?: string | null;
+  origem?: string | null;
+  sourceUrl?: string | null;
+  imageOriginalUrl?: string | null;
+  cep?: string | null;
+  loja?: string | null;
+  campanha?: string | null;
   confianca?: string | null;
   status: "aprovado" | "rejeitado" | "publicado" | "duplicado" | "erro" | "revisao" | "pendente_geo";
   ofertaId?: number | null;
@@ -1393,7 +1403,7 @@ export interface ProductImageCandidate {
   id: number;
   produtoNormalizado?: string | null;
   produtoId?: string | null;
-  origem: "folheto_crop" | "admin_upload" | "usuario" | "catalogo";
+  origem: "folheto_crop" | "admin_upload" | "usuario" | "catalogo" | "site_mercado";
   imageUrl: string;
   qualityScore?: number | null;
   status: "candidato" | "aprovado" | "rejeitado" | "oficial";

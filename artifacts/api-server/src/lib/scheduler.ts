@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Background scheduler for AíCompensa.
  * Runs every 5 minutes and fires time-gated jobs:
  *  - Daily summary   → 19:00 BRT (UTC-3)
@@ -11,6 +11,9 @@ import { and, eq, gt, sql, desc } from "drizzle-orm";
 import { createNotification, NOTIF, notifyExpiring } from "./notifications";
 import { runShoppingAnalysisForAll } from "./shopping-analyzer";
 import { runOfertaBot } from "./ofertabot";
+import { releaseOfertaBotRunLock, tryAcquireOfertaBotRunLock } from "./ofertabot-run-lock";
+import { scrapeAtacadaoAPI } from "./atacadao-api-scraper";
+import { importAtacadaoPayload } from "./atacadao-site-importer";
 import { logger } from "./logger";
 
 // ── BRT helpers ───────────────────────────────────────────────────────────────
@@ -233,6 +236,7 @@ async function runWeeklySummaryJob(): Promise<void> {
 
 let lastExpiringRunDate = "";
 let lastOfertaBotRunDate = "";
+let lastAtacadaoRunDate = "";
 
 async function runExpiringOffersJob(): Promise<void> {
   if (lastExpiringRunDate === brasiliaDateString()) return;
@@ -282,14 +286,65 @@ export function startScheduler(): void {
       );
     }
 
-    // Sprint 20: OfertaBot — 07h e 15h BRT (2x ao dia)
-    if ((hour === 7 || hour === 15) && lastOfertaBotRunDate !== `${brasiliaDateString()}-${hour}`) {
-      lastOfertaBotRunDate = `${brasiliaDateString()}-${hour}`;
-      await runOfertaBot().catch(err =>
-        logger.error({ err }, "[scheduler] ofertabot job failed"),
-      );
+    // Sprint 21: Atacadão GraphQL scraper — 06h, 12h e 18h BRT (roda antes do OfertaBot)
+    if ((hour === 6 || hour === 12 || hour === 18) && lastAtacadaoRunDate !== `${brasiliaDateString()}-${hour}`) {
+      const atacadaoKey = `${brasiliaDateString()}-${hour}`;
+      lastAtacadaoRunDate = atacadaoKey;
+      setImmediate(async () => {
+        const t0 = Date.now();
+        try {
+          const payload = await scrapeAtacadaoAPI();
+          const stats = await importAtacadaoPayload(payload);
+          const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+          const linhas = [
+            "",
+            "=== ATACADÃO VTEX SUMMARY ===",
+            "",
+            `Fonte: Atacadão Cuiabá — Tijucal (VTEX GraphQL)`,
+            `Produtos capturados:   ${stats.total}`,
+            `Publicados:            ${stats.publicados}`,
+            `Enviados p/ revisão:   ${stats.revisao}`,
+            `Duplicados:            ${stats.duplicados}`,
+            `Rejeitados:            ${stats.rejeitados}`,
+            `Imagens salvas:        ${stats.imagensSalvas}`,
+            `Imagens com erro:      ${stats.imagensComErro}`,
+            ``,
+            `Tempo total: ${elapsed}s`,
+            "",
+            "=============================",
+          ];
+          logger.info(linhas.join("\n"));
+        } catch (err) {
+          logger.error({ err, runKey: atacadaoKey }, "[scheduler] atacadao scraper falhou");
+          lastAtacadaoRunDate = ""; // permite retry no próximo tick
+        }
+      });
+    }
+
+    // Sprint 21: OfertaBot autônomo — 06h, 12h e 18h BRT
+    if ((hour === 6 || hour === 12 || hour === 18) && lastOfertaBotRunDate !== `${brasiliaDateString()}-${hour}`) {
+      const runKey = `${brasiliaDateString()}-${hour}`;
+      lastOfertaBotRunDate = runKey;
+      const locked = await tryAcquireOfertaBotRunLock().catch((err) => {
+        logger.error({ err, runKey }, "[scheduler] ofertabot lock failed");
+        return false;
+      });
+      if (!locked) {
+        logger.info({ runKey }, "[scheduler] ofertabot already running in another instance");
+        return;
+      }
+      try {
+        await runOfertaBot();
+        logger.info({ runKey }, "[scheduler] ofertabot job completed");
+      } catch (err) {
+        logger.error({ err, runKey }, "[scheduler] ofertabot job failed");
+      } finally {
+        await releaseOfertaBotRunLock().catch((err) =>
+          logger.error({ err, runKey }, "[scheduler] ofertabot unlock failed"),
+        );
+      }
     }
   }, 5 * 60 * 1000); // tick every 5 minutes
 
-  logger.info("[scheduler] started — daily 19h BRT, weekly Sunday 09h BRT, expiring 08h BRT, shopping analysis 08h/12h/18h BRT, ofertabot 07h/15h BRT");
+  logger.info("[scheduler] started — daily 19h BRT, weekly Sunday 09h BRT, expiring 08h BRT, shopping analysis 08h/12h/18h BRT, atacadao scraper 06h/12h/18h BRT, ofertabot 06h/12h/18h BRT");
 }

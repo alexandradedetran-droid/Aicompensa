@@ -23,8 +23,9 @@ import { logger } from "./logger";
 
 const AUTO_PUBLISH        = process.env["OFERTABOT_AUTO_PUBLISH"] === "true";
 const BOT_USER_ID         = Number(process.env["OFERTABOT_USER_ID"] ?? "0");
-const CONFIDENCE_PUBLISH  = 0.85;
-const CONFIDENCE_REVIEW   = 0.65;
+const CONFIDENCE_AUTO_PUBLISH = 0.98;
+const CONFIDENCE_FAST_QUEUE   = 0.90;
+const CONFIDENCE_REVIEW       = 0.65;
 const TIMEOUT_PER_SOURCE  = 30_000; // 30s por fonte
 const MAX_SOURCES_PER_RUN = 10;
 const CIDADES_PERMITIDAS  = ["cuiabá", "cuiaba", "várzea grande", "varzea grande"];
@@ -59,13 +60,26 @@ interface ExtractionResult {
   ofertas: ExtractionOferta[];
 }
 
+// ── Result per source (used for the run summary) ──────────────────────────────
+
+interface SourceRunResult {
+  sourceId: number;
+  nome: string;
+  status: "skipped" | "processado" | "erro";
+  motivo?: string;
+  publicados: number;
+  revisao: number;
+  duplicados: number;
+  rejeitados: number;
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function normalizeCidade(c: string): string {
   return c
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[̀-ͯ]/g, "")
+    .replace(/[\u0300-\u036f]/g, "")
     .trim();
 }
 
@@ -221,7 +235,21 @@ async function jaExisteItem(hash: string): Promise<boolean> {
 
 // ── Publicação de oferta ───────────────────────────────────────────────────────
 
-async function publicarItem(
+async function hasOfficialImage(produtoNormalizado: string | null | undefined): Promise<boolean> {
+  if (!produtoNormalizado) return false;
+  const [image] = await db
+    .select({ id: productImageCandidatesTable.id })
+    .from(productImageCandidatesTable)
+    .where(
+      and(
+        eq(productImageCandidatesTable.produtoNormalizado, produtoNormalizado),
+        eq(productImageCandidatesTable.status, "oficial"),
+      ),
+    )
+    .limit(1);
+  return !!image;
+}
+export async function publicarItem(
   item: typeof folhetoImportItemsTable.$inferSelect,
   importRecord: typeof folhetoImportsTable.$inferSelect,
   source: typeof folhetoSourcesTable.$inferSelect,
@@ -251,14 +279,14 @@ async function publicarItem(
         bairro: item.bairro ?? source.bairro ?? undefined,
         cidade: item.cidade ?? source.cidade,
         validade: item.validade ? new Date(item.validade) : undefined,
-        fotoUrl: item.cropUrl ?? undefined,
+        fotoUrl: item.cropUrl ?? item.imageOriginalUrl ?? undefined,
         usuarioId: BOT_USER_ID,
         tipoOrigem: "importada",
-        origem: "ofertabot",
-        fonteUrl: source.url,
+        origem: item.origem ?? "ofertabot",
+        fonteUrl: item.sourceUrl ?? source.url,
         folhetoImportId: importRecord.id,
         folhetoCropUrl: item.cropUrl ?? undefined,
-        folhetoOriginalUrl: source.url,
+        folhetoOriginalUrl: item.imageOriginalUrl ?? source.url,
         hashDeduplicacao: item.hashDeduplicacao ?? undefined,
         confidenceScore: item.confianca ?? undefined,
         status: "nova",
@@ -350,11 +378,15 @@ async function processarItens(
       continue;
     }
 
-    // Determinar status pelo confidence score
+    // Regra de aprovação inteligente:
+    // >=98% + imagem oficial + sem duplicidade publica automaticamente.
+    // 90-97% entra aprovada para fila rápida; abaixo disso segue revisão/manual.
     const conf = oferta.confianca ?? 0;
-    const shouldAutoPublish = AUTO_PUBLISH && conf >= CONFIDENCE_PUBLISH;
+    const officialImage = await hasOfficialImage(oferta.produtoNormalizado ?? oferta.produto);
+    const shouldAutoPublish = conf >= CONFIDENCE_AUTO_PUBLISH && officialImage;
+    const shouldFastQueue = conf >= CONFIDENCE_FAST_QUEUE;
     const shouldReview = conf >= CONFIDENCE_REVIEW;
-    const status = !shouldReview ? "rejeitado" : shouldAutoPublish ? "aprovado" : "revisao";
+    const status = !shouldReview ? "rejeitado" : shouldAutoPublish || shouldFastQueue ? "aprovado" : "revisao";
 
     if (status === "rejeitado") {
       rejeitados++;
@@ -401,7 +433,7 @@ async function processarItens(
       }).catch(() => {});
     }
 
-    // Auto-publicar se configurado
+    // Auto-publicação autônoma somente quando a regra forte é satisfeita.
     if (status === "aprovado" && item) {
       const ofertaId = await publicarItem(item, importRecord, source);
       if (ofertaId) {
@@ -421,16 +453,24 @@ async function processarItens(
 
 async function processarFonte(
   source: typeof folhetoSourcesTable.$inferSelect,
-): Promise<void> {
+): Promise<SourceRunResult> {
   logger.info({ sourceId: source.id, nome: source.nome }, "[ofertabot] processando fonte");
 
-  // Verificar cidade da fonte
+  const base: SourceRunResult = {
+    sourceId: source.id,
+    nome: source.nome,
+    status: "skipped",
+    publicados: 0,
+    revisao: 0,
+    duplicados: 0,
+    rejeitados: 0,
+  };
+
   if (!cidadePermitida(source.cidade)) {
     logger.warn({ sourceId: source.id, cidade: source.cidade }, "[ofertabot] fonte com cidade fora do escopo, ignorando");
-    return;
+    return { ...base, motivo: `cidade fora do escopo: ${source.cidade}` };
   }
 
-  // Download
   const download = await withTimeout(downloadImagem(source.url), TIMEOUT_PER_SOURCE);
   if (!download) {
     await db
@@ -441,20 +481,18 @@ async function processarFonte(
         updatedAt: new Date(),
       })
       .where(eq(folhetoSourcesTable.id, source.id));
-    return;
+    return { ...base, status: "erro", motivo: "download da imagem falhou" };
   }
 
-  // Verificar se já processamos este hash de conteúdo
   if (source.ultimoHash === download.hash) {
     logger.info({ sourceId: source.id }, "[ofertabot] hash idêntico ao último check, pulando");
     await db
       .update(folhetoSourcesTable)
       .set({ ultimoCheckAt: new Date(), updatedAt: new Date() })
       .where(eq(folhetoSourcesTable.id, source.id));
-    return;
+    return { ...base, motivo: "mesmo conteúdo (hash idêntico)" };
   }
 
-  // Verificar se já temos um import com este hash
   const [importExistente] = await db
     .select({ id: folhetoImportsTable.id })
     .from(folhetoImportsTable)
@@ -467,10 +505,9 @@ async function processarFonte(
       .update(folhetoSourcesTable)
       .set({ ultimoHash: download.hash, ultimoCheckAt: new Date(), updatedAt: new Date() })
       .where(eq(folhetoSourcesTable.id, source.id));
-    return;
+    return { ...base, motivo: "folheto já importado anteriormente" };
   }
 
-  // Criar registro de importação
   const [importRecord] = await db
     .insert(folhetoImportsTable)
     .values({
@@ -485,9 +522,10 @@ async function processarFonte(
     })
     .returning();
 
-  if (!importRecord) return;
+  if (!importRecord) {
+    return { ...base, status: "erro", motivo: "falha ao criar registro de importação" };
+  }
 
-  // Extração com Gemini
   let resultado: ExtractionResult | null = null;
   try {
     resultado = await withTimeout(
@@ -507,10 +545,9 @@ async function processarFonte(
       .update(folhetoSourcesTable)
       .set({ erroConsecutivo: sql`${folhetoSourcesTable.erroConsecutivo} + 1`, ultimoCheckAt: new Date(), updatedAt: new Date() })
       .where(eq(folhetoSourcesTable.id, source.id));
-    return;
+    return { ...base, status: "erro", motivo: "extração Gemini falhou" };
   }
 
-  // Verificar geolocalização do resultado
   const cidadeResultado = resultado.cidade ?? source.cidade;
   if (resultado.confiancaGeo < 0.5 && !cidadePermitida(cidadeResultado)) {
     await db
@@ -521,10 +558,9 @@ async function processarFonte(
       .update(folhetoSourcesTable)
       .set({ ultimoHash: download.hash, ultimoCheckAt: new Date(), erroConsecutivo: 0, updatedAt: new Date() })
       .where(eq(folhetoSourcesTable.id, source.id));
-    return;
+    return { ...base, motivo: `geolocalização inválida: ${cidadeResultado}` };
   }
 
-  // Atualizar import com dados da extração
   await db
     .update(folhetoImportsTable)
     .set({
@@ -537,10 +573,8 @@ async function processarFonte(
     })
     .where(eq(folhetoImportsTable.id, importRecord.id));
 
-  // Processar itens
   const stats = await processarItens(resultado.ofertas, importRecord, source, resultado);
 
-  // Atualizar totais
   await db
     .update(folhetoImportsTable)
     .set({
@@ -553,7 +587,6 @@ async function processarFonte(
     })
     .where(eq(folhetoImportsTable.id, importRecord.id));
 
-  // Atualizar fonte
   await db
     .update(folhetoSourcesTable)
     .set({ ultimoHash: download.hash, ultimoCheckAt: new Date(), erroConsecutivo: 0, updatedAt: new Date() })
@@ -563,14 +596,23 @@ async function processarFonte(
     { sourceId: source.id, importId: importRecord.id, ...stats },
     "[ofertabot] fonte processada",
   );
+
+  return {
+    ...base,
+    status: "processado",
+    publicados: stats.publicados,
+    revisao: stats.revisao,
+    duplicados: stats.duplicados,
+    rejeitados: stats.rejeitados,
+  };
 }
 
 // ── Entry point principal ─────────────────────────────────────────────────────
 
 export async function runOfertaBot(): Promise<{ fontes: number; erros: number }> {
+  const t0 = Date.now();
   logger.info("[ofertabot] iniciando execução");
 
-  // Buscar fontes ativas de Cuiabá e Várzea Grande
   const fontes = await db
     .select()
     .from(folhetoSourcesTable)
@@ -588,17 +630,59 @@ export async function runOfertaBot(): Promise<{ fontes: number; erros: number }>
     return { fontes: 0, erros: 0 };
   }
 
+  const results: SourceRunResult[] = [];
   let erros = 0;
+
   for (const fonte of fontes) {
     try {
-      await processarFonte(fonte);
+      results.push(await processarFonte(fonte));
     } catch (err) {
       erros++;
       logger.error({ err, sourceId: fonte.id }, "[ofertabot] erro ao processar fonte");
+      results.push({
+        sourceId: fonte.id,
+        nome: fonte.nome,
+        status: "erro",
+        motivo: err instanceof Error ? err.message : String(err),
+        publicados: 0,
+        revisao: 0,
+        duplicados: 0,
+        rejeitados: 0,
+      });
     }
   }
 
-  logger.info({ fontes: fontes.length, erros }, "[ofertabot] execução concluída");
+  const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+  const totais = results.reduce(
+    (acc, r) => ({
+      publicados: acc.publicados + r.publicados,
+      revisao: acc.revisao + r.revisao,
+      duplicados: acc.duplicados + r.duplicados,
+      rejeitados: acc.rejeitados + r.rejeitados,
+    }),
+    { publicados: 0, revisao: 0, duplicados: 0, rejeitados: 0 },
+  );
+
+  const linhas: string[] = ["", "=== OFERTABOT SUMMARY ===", ""];
+  for (const r of results) {
+    linhas.push(`Fonte: ${r.nome}`);
+    if (r.status === "processado") {
+      linhas.push(`  Folhetos processados: 1`);
+      linhas.push(`  Publicados: ${r.publicados} | Revisão: ${r.revisao} | Duplicados: ${r.duplicados} | Rejeitados: ${r.rejeitados}`);
+    } else if (r.status === "erro") {
+      linhas.push(`  Status: erro — ${r.motivo ?? "desconhecido"}`);
+    } else {
+      linhas.push(`  Status: ignorado — ${r.motivo ?? "sem motivo"}`);
+    }
+    linhas.push("");
+  }
+  linhas.push(`Total: ${results.length} fontes | ${totais.publicados} publicados | ${totais.revisao} em revisão | ${totais.duplicados} duplicados | ${totais.rejeitados} rejeitados`);
+  linhas.push(`Tempo total: ${elapsed}s`);
+  linhas.push("");
+  linhas.push("=========================");
+
+  logger.info(linhas.join("\n"));
+
   return { fontes: fontes.length, erros };
 }
 

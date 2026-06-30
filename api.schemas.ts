@@ -308,6 +308,10 @@ export type ListOfertasParams = {
    */
   categoria?: string;
   /**
+   * Filter by city
+   */
+  cidade?: string;
+  /**
    * User latitude
    */
   lat?: number;

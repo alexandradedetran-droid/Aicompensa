@@ -5,7 +5,11 @@
   "type": "module",
   "scripts": {
     "hello": "tsx ./src/hello.ts",
+    "scrape:atacadao": "tsx ./src/scrape-atacadao.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "playwright": "^1.56.1"
   },
   "devDependencies": {
     "@types/node": "catalog:",

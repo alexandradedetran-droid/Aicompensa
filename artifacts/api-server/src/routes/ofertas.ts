@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { rateLimit } from "express-rate-limit";
 import { db, ofertasTable, usuariosTable, offerConfirmationsTable } from "@workspace/db";
-import { and, eq, ilike, sql, asc, gt, or, isNull } from "drizzle-orm";
+import { and, eq, ilike, sql, asc, gt, or, isNull, type SQL } from "drizzle-orm";
 import {
   ListOfertasQueryParams,
   CreateOfertaBody,
@@ -86,7 +86,25 @@ function computeStatus(row: {
 }
 
 function formatOferta(
-  r: typeof ofertasTable.$inferSelect & { nome: string; pontos: number },
+  r: Partial<typeof ofertasTable.$inferSelect> & {
+    id: number;
+    produto: string;
+    categoria: string;
+    preco: number;
+    mercado: string;
+    validade: Date | null;
+    dataCriacao: Date;
+    curtidas: number;
+    validacoes: number;
+    denuncias: number;
+    confirmacoes: number;
+    status: string;
+    usuarioId: number;
+    destacada: boolean;
+    patrocinada: boolean;
+    nome: string;
+    pontos: number;
+  },
   lat?: number,
   lng?: number
 ) {
@@ -135,11 +153,12 @@ router.get("/ofertas", async (req, res) => {
     res.status(400).json({ error: "Parâmetros de busca inválidos" });
     return;
   }
-  const { produto, categoria, lat, lng, raio, ordenar } = parsed.data;
+  const { produto, categoria, cidade, lat, lng, raio, ordenar } = parsed.data;
 
-  const conditions = [];
+  const conditions: SQL[] = [];
   if (produto) conditions.push(ilike(ofertasTable.produto, `%${produto}%`));
   if (categoria) conditions.push(ilike(ofertasTable.categoria, categoria));
+  if (cidade) conditions.push(ilike(ofertasTable.cidade, cidade));
   // Hide heavily-reported offers from public feed (still visible in admin)
   conditions.push(sql`${ofertasTable.denuncias} < 5`);
 

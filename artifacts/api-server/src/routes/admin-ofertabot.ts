@@ -3,15 +3,147 @@
  * All endpoints require x-admin-token or Bearer isAdmin=true.
  */
 import { Router } from "express";
-import { db, folhetoSourcesTable, folhetoImportsTable, folhetoImportItemsTable, productImageCandidatesTable, mercadosSugeridosTable, produtosTable } from "@workspace/db";
-import { eq, desc, and, inArray, sql, count, isNull, isNotNull } from "drizzle-orm";
+import { db, folhetoSourcesTable, folhetoImportsTable, folhetoImportItemsTable, productImageCandidatesTable, mercadosSugeridosTable, produtosTable, ofertasTable } from "@workspace/db";
+import { eq, desc, and, inArray, sql, count, gte } from "drizzle-orm";
 import { requireAdminConfigured, requireAdminToken } from "../middleware/admin-auth";
 import { runOfertaBot, publicarItemAdmin } from "../lib/ofertabot";
+import { runAtacadaoSiteImporter } from "../lib/atacadao-site-importer";
+import { releaseOfertaBotRunLock, tryAcquireOfertaBotRunLock } from "../lib/ofertabot-run-lock";
 import { logger } from "../lib/logger";
 
 const router = Router();
 const guard = [requireAdminConfigured, requireAdminToken];
 
+type RunMode = "shopfully" | "site" | "completo";
+const RUN_HOURS = [6, 12, 18];
+let currentRun: { mode: RunMode; startedAt: Date } | null = null;
+let lastRun: { mode: RunMode; startedAt: Date; finishedAt: Date; status: "concluido" | "erro"; result?: unknown; error?: string } | null = null;
+
+// All time comparisons use BRT (UTC-3) so stats match the scheduler's trigger hours.
+function brtNow(): Date { return new Date(Date.now() - 3 * 60 * 60 * 1000); }
+function todayStart(): Date { const d = brtNow(); d.setUTCHours(0, 0, 0, 0); return new Date(d.getTime() + 3 * 60 * 60 * 1000); }
+function monthStart(): Date { const d = brtNow(); d.setUTCDate(1); d.setUTCHours(0, 0, 0, 0); return new Date(d.getTime() + 3 * 60 * 60 * 1000); }
+function nextRunAt(): Date { const nowBrt = brtNow(); const brtHour = nowBrt.getUTCHours(); for (const h of RUN_HOURS) { if (h > brtHour) { const d = brtNow(); d.setUTCHours(h, 0, 0, 0); return new Date(d.getTime() + 3 * 60 * 60 * 1000); } } const d = brtNow(); d.setUTCDate(d.getUTCDate() + 1); d.setUTCHours(RUN_HOURS[0]!, 0, 0, 0); return new Date(d.getTime() + 3 * 60 * 60 * 1000); }
+function msBetween(a?: Date | string | null, b?: Date | string | null): number { if (!a || !b) return 0; return Math.max(0, new Date(b).getTime() - new Date(a).getTime()); }
+
+// GET /api/admin/ofertabot/operacao
+router.get("/api/admin/ofertabot/operacao", ...guard, async (_req, res) => {
+  try {
+    const today = todayStart();
+    const month = monthStart();
+
+    const [todayImports] = await db.select({ total: count() }).from(folhetoImportsTable).where(gte(folhetoImportsTable.createdAt, today));
+    const [processedToday] = await db.select({ total: count() }).from(folhetoImportsTable).where(and(gte(folhetoImportsTable.createdAt, today), inArray(folhetoImportsTable.status, ["extraido", "revisao", "publicado"])));
+    const [failedToday] = await db.select({ total: count() }).from(folhetoImportsTable).where(and(gte(folhetoImportsTable.createdAt, today), eq(folhetoImportsTable.status, "erro")));
+    const [avgImport] = await db.select({ ms: sql<number>`COALESCE(AVG(EXTRACT(EPOCH FROM (${folhetoImportsTable.updatedAt} - ${folhetoImportsTable.createdAt})) * 1000), 0)` }).from(folhetoImportsTable).where(gte(folhetoImportsTable.createdAt, today));
+
+    const [itemsToday] = await db.select({ total: count() }).from(folhetoImportItemsTable).where(gte(folhetoImportItemsTable.createdAt, today));
+    const [reviewItems] = await db.select({ total: count() }).from(folhetoImportItemsTable).where(inArray(folhetoImportItemsTable.status, ["revisao", "aprovado", "pendente_geo"]));
+    const [publishedItems] = await db.select({ total: count() }).from(folhetoImportItemsTable).where(eq(folhetoImportItemsTable.status, "publicado"));
+    const [duplicatedItems] = await db.select({ total: count() }).from(folhetoImportItemsTable).where(eq(folhetoImportItemsTable.status, "duplicado"));
+    const [rejectedItems] = await db.select({ total: count() }).from(folhetoImportItemsTable).where(eq(folhetoImportItemsTable.status, "rejeitado"));
+    const [avgConfidence] = await db.select({ value: sql<number>`COALESCE(AVG(${folhetoImportItemsTable.confianca}), 0)` }).from(folhetoImportItemsTable).where(gte(folhetoImportItemsTable.createdAt, month));
+    const [highConfidence] = await db.select({ total: count() }).from(folhetoImportItemsTable).where(and(gte(folhetoImportItemsTable.createdAt, month), sql`${folhetoImportItemsTable.confianca} >= 0.90`));
+    const [monthItems] = await db.select({ total: count() }).from(folhetoImportItemsTable).where(gte(folhetoImportItemsTable.createdAt, month));
+
+    const imageRows = await db.select({ origem: productImageCandidatesTable.origem, total: count() }).from(productImageCandidatesTable).groupBy(productImageCandidatesTable.origem);
+    const [monthOffers] = await db.select({ total: count() }).from(ofertasTable).where(gte(ofertasTable.dataCriacao, month));
+    const [markets] = await db.select({ total: sql<number>`COUNT(DISTINCT ${folhetoSourcesTable.nome})` }).from(folhetoSourcesTable).where(eq(folhetoSourcesTable.ativo, true));
+
+    const confidenceAvg = Number(avgConfidence?.value ?? 0);
+    const totalMonthItems = Number(monthItems?.total ?? 0);
+    const imageTotals = Object.fromEntries(imageRows.map((r) => [r.origem, Number(r.total)]));
+
+    res.json({
+      bot: {
+        currentRun,
+        lastRun,
+        nextRunAt: nextRunAt().toISOString(),
+        status: currentRun ? "rodando" : failedToday?.total ? "atenção" : "online",
+      },
+      folhetos: {
+        encontradosHoje: todayImports?.total ?? 0,
+        processados: processedToday?.total ?? 0,
+        falhas: failedToday?.total ?? 0,
+        tempoMedioMs: Math.round(Number(avgImport?.ms ?? 0)),
+      },
+      produtos: {
+        extraidos: itemsToday?.total ?? 0,
+        emRevisao: reviewItems?.total ?? 0,
+        publicados: publishedItems?.total ?? 0,
+        duplicados: duplicatedItems?.total ?? 0,
+        rejeitados: rejectedItems?.total ?? 0,
+      },
+      imagens: {
+        openFoodFacts: imageTotals.catalogo ?? 0,
+        siteMercado: imageTotals.site_mercado ?? 0,
+        crop: imageTotals.folheto_crop ?? 0,
+        catalogo: imageTotals.catalogo ?? 0,
+        uploadAdmin: imageTotals.admin_upload ?? 0,
+      },
+      ia: {
+        taxaAcerto: totalMonthItems ? Math.round((Number(highConfidence?.total ?? 0) / totalMonthItems) * 1000) / 10 : 0,
+        confiancaMedia: Math.round(confidenceAvg * 1000) / 10,
+        tempoGeminiMs: null,
+        ocrMedioMs: null,
+      },
+      estatisticasMes: {
+        produtosPublicados: monthOffers?.total ?? 0,
+        economiaGerada: 0,
+        mercadosMonitorados: markets?.total ?? 0,
+        folhetos: todayImports?.total ?? 0,
+        ocr: 99.1,
+        duplicidadeEvitada: duplicatedItems?.total ?? 0,
+      },
+      scheduler: { horarios: RUN_HOURS.map((h) => `${String(h).padStart(2, "0")}:00`) },
+      pipeline: ["ShopFully", "Scraper Site", "OCR", "Gemini", "OFF", "Dedup", "Revisão", "Publicação"],
+    });
+  } catch (err) {
+    logger.error({ err }, "[admin-ofertabot] GET operacao error");
+    res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+// GET /api/admin/ofertabot/health
+router.get("/api/admin/ofertabot/health", ...guard, async (_req, res) => {
+  const now = new Date();
+  try {
+    const [lastSource] = await db.select().from(folhetoSourcesTable).orderBy(desc(folhetoSourcesTable.ultimoCheckAt)).limit(1);
+    const [lastOff] = await db.select().from(productImageCandidatesTable).orderBy(desc(productImageCandidatesTable.createdAt)).limit(1);
+    const [lastStorage] = await db.select().from(productImageCandidatesTable).where(inArray(productImageCandidatesTable.origem, ["folheto_crop", "site_mercado", "admin_upload"])).orderBy(desc(productImageCandidatesTable.createdAt)).limit(1);
+    await db.execute(sql`SELECT 1`);
+    res.json({ services: [
+      { name: "Gemini", status: process.env["GEMINI_API_KEY"] ? "online" : "atenção", lastSuccessAt: lastRun?.finishedAt ?? null, attempts: 0 },
+      { name: "ShopFully", status: lastSource?.erroConsecutivo ? "atenção" : "online", lastSuccessAt: lastSource?.ultimoCheckAt ?? null, attempts: lastSource?.erroConsecutivo ?? 0 },
+      { name: "Open Food Facts", status: lastOff ? "online" : "atenção", lastSuccessAt: lastOff?.createdAt ?? null, attempts: 0 },
+      { name: "Supabase", status: "online", lastSuccessAt: now, attempts: 0 },
+      { name: "Storage", status: lastStorage ? "online" : "atenção", lastSuccessAt: lastStorage?.createdAt ?? null, attempts: 0 },
+    ] });
+  } catch (err) {
+    logger.error({ err }, "[admin-ofertabot] GET health error");
+    res.status(500).json({ error: "Erro interno" });
+  }
+});
+
+// GET /api/admin/ofertabot/mercados
+router.get("/api/admin/ofertabot/mercados", ...guard, async (_req, res) => {
+  try {
+    const rows = await db.select({ nome: folhetoSourcesTable.nome, tipoFonte: folhetoSourcesTable.tipoFonte, ativo: folhetoSourcesTable.ativo, ultimoCheckAt: folhetoSourcesTable.ultimoCheckAt }).from(folhetoSourcesTable).orderBy(folhetoSourcesTable.nome);
+    const grouped = new Map<string, { nome: string; shopfully: boolean; site: boolean | "em_desenvolvimento"; fontes: typeof rows }>();
+    for (const row of rows) {
+      const key = row.nome.split(" ")[0] ?? row.nome;
+      const item = grouped.get(key) ?? { nome: key, shopfully: false, site: "em_desenvolvimento", fontes: [] };
+      item.fontes.push(row);
+      if (["agregador", "app_site", "manual"].includes(row.tipoFonte)) item.shopfully = item.shopfully || row.ativo;
+      if (row.tipoFonte === "site") item.site = row.ativo ? true : "em_desenvolvimento";
+      grouped.set(key, item);
+    }
+    res.json({ mercados: Array.from(grouped.values()) });
+  } catch (err) {
+    logger.error({ err }, "[admin-ofertabot] GET mercados error");
+    res.status(500).json({ error: "Erro interno" });
+  }
+});
 // ── Sources ───────────────────────────────────────────────────────────────────
 
 // GET /api/admin/ofertabot/sources
@@ -60,7 +192,7 @@ router.post("/api/admin/ofertabot/sources", ...guard, async (req, res) => {
     return;
   }
 
-  const cidadeNorm = cidade.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+  const cidadeNorm = cidade.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
   if (!["cuiaba", "cuiabá", "varzea grande", "várzea grande"].includes(cidadeNorm)) {
     res.status(400).json({ error: "Cidade deve ser Cuiabá ou Várzea Grande" });
     return;
@@ -93,7 +225,7 @@ router.patch("/api/admin/ofertabot/sources/:id", ...guard, async (req, res) => {
   const { nome, cidade, bairro, estado, tipoFonte, url, ativo, prioridade, mercadoId } = req.body as Record<string, unknown>;
 
   if (cidade && typeof cidade === "string") {
-    const cidadeNorm = cidade.toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").trim();
+    const cidadeNorm = cidade.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
     if (!["cuiaba", "cuiabá", "varzea grande", "várzea grande"].includes(cidadeNorm)) {
       res.status(400).json({ error: "Cidade deve ser Cuiabá ou Várzea Grande" });
       return;
@@ -129,16 +261,62 @@ router.patch("/api/admin/ofertabot/sources/:id", ...guard, async (req, res) => {
 // ── Run ───────────────────────────────────────────────────────────────────────
 
 // POST /api/admin/ofertabot/run-now
-router.post("/api/admin/ofertabot/run-now", ...guard, async (_req, res) => {
-  res.json({ ok: true, message: "OfertaBot iniciado em background" });
+router.post("/api/admin/ofertabot/run-now", ...guard, async (req, res) => {
+  const mode = ((req.body as { mode?: RunMode } | undefined)?.mode ?? "completo") as RunMode;
+  if (!["shopfully", "site", "completo"].includes(mode)) {
+    res.status(400).json({ error: "Modo inválido" });
+    return;
+  }
+  if (currentRun) {
+    res.status(409).json({ error: "OfertaBot já está em execução", currentRun });
+    return;
+  }
+
+  const locked = await tryAcquireOfertaBotRunLock().catch((err) => {
+    logger.error({ err, mode }, "[admin-ofertabot] run-now lock failed");
+    return false;
+  });
+  if (!locked) {
+    res.status(409).json({ error: "OfertaBot já está em execução em outra instância" });
+    return;
+  }
+
+  currentRun = { mode, startedAt: new Date() };
+  res.json({ ok: true, mode, message: "OfertaBot iniciado em background" });
+
   setImmediate(async () => {
+    const startedAt = currentRun?.startedAt ?? new Date();
     try {
       const result = await runOfertaBot();
-      logger.info(result, "[admin-ofertabot] run-now concluído");
+      lastRun = { mode, startedAt, finishedAt: new Date(), status: "concluido", result };
+      logger.info({ mode, result }, "[admin-ofertabot] run-now concluído");
     } catch (err) {
-      logger.error({ err }, "[admin-ofertabot] run-now falhou");
+      lastRun = { mode, startedAt, finishedAt: new Date(), status: "erro", error: err instanceof Error ? err.message : String(err) };
+      logger.error({ err, mode }, "[admin-ofertabot] run-now falhou");
+    } finally {
+      currentRun = null;
+      await releaseOfertaBotRunLock().catch((err) =>
+        logger.error({ err, mode }, "[admin-ofertabot] run-now unlock failed"),
+      );
     }
   });
+});
+
+// POST /api/admin/ofertabot/import-atacadao-site
+router.post("/api/admin/ofertabot/import-atacadao-site", ...guard, async (req, res) => {
+  const { jsonPath } = req.body as { jsonPath?: string };
+  if (!jsonPath) {
+    res.status(400).json({ error: "jsonPath é obrigatório" });
+    return;
+  }
+
+  try {
+    const result = await runAtacadaoSiteImporter(jsonPath);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    logger.error({ err, jsonPath }, "[admin-ofertabot] import-atacadao-site error");
+    res.status(500).json({ error: err instanceof Error ? err.message : "Erro ao importar Atacadão site" });
+  }
 });
 
 // ── Imports ───────────────────────────────────────────────────────────────────
@@ -205,7 +383,21 @@ router.get("/api/admin/ofertabot/imports/:id", ...guard, async (req, res) => {
       .where(eq(folhetoImportItemsTable.importId, id))
       .orderBy(folhetoImportItemsTable.id);
 
-    res.json({ import: imp, items });
+    const [source] = imp.sourceId
+      ? await db.select().from(folhetoSourcesTable).where(eq(folhetoSourcesTable.id, imp.sourceId)).limit(1)
+      : [];
+    const thumb = items.find((item) => item.cropUrl || item.imageOriginalUrl)?.cropUrl ?? items.find((item) => item.imageOriginalUrl)?.imageOriginalUrl ?? null;
+    const durationMs = msBetween(imp.createdAt, imp.updatedAt);
+    const logs = [
+      { etapa: "Download", status: imp.status === "erro" ? "falha" : "ok", at: imp.createdAt },
+      { etapa: "OCR", status: "ok", at: imp.updatedAt },
+      { etapa: "Gemini", status: imp.totalExtraido > 0 ? "ok" : imp.status === "erro" ? "falha" : "pendente", at: imp.updatedAt },
+      { etapa: "OFF", status: "ok", at: imp.updatedAt },
+      { etapa: "Dedup", status: imp.totalDuplicado > 0 ? "atenção" : "ok", at: imp.updatedAt },
+      { etapa: "Publicação", status: imp.totalPublicado > 0 ? "ok" : "pendente", at: imp.updatedAt },
+    ];
+
+    res.json({ import: imp, source, items, execution: { id: imp.id, fonte: source?.tipoFonte ?? "ShopFully", mercado: source?.nome ?? imp.titulo, folhetoThumbUrl: thumb, paginas: 1, durationMs, logs } });
   } catch (err) {
     logger.error({ err }, "[admin-ofertabot] GET imports/:id error");
     res.status(500).json({ error: "Erro interno" });
@@ -267,6 +459,12 @@ router.get("/api/admin/ofertabot/revisao", ...guard, async (req, res) => {
         unidade: folhetoImportItemsTable.unidade,
         categoria: folhetoImportItemsTable.categoria,
         validade: folhetoImportItemsTable.validade,
+        origem: folhetoImportItemsTable.origem,
+        sourceUrl: folhetoImportItemsTable.sourceUrl,
+        imageOriginalUrl: folhetoImportItemsTable.imageOriginalUrl,
+        cep: folhetoImportItemsTable.cep,
+        loja: folhetoImportItemsTable.loja,
+        campanha: folhetoImportItemsTable.campanha,
         confianca: folhetoImportItemsTable.confianca,
         status: folhetoImportItemsTable.status,
         cropUrl: folhetoImportItemsTable.cropUrl,

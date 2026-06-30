@@ -20,6 +20,7 @@ export const HealthCheckResponse = zod.object({
 export const ListOfertasQueryParams = zod.object({
   produto: zod.coerce.string().optional().describe("Filter by product name"),
   categoria: zod.coerce.string().optional().describe("Filter by category"),
+  cidade: zod.coerce.string().optional().describe("Filter by city"),
   lat: zod.coerce.number().optional().describe("User latitude"),
   lng: zod.coerce.number().optional().describe("User longitude"),
   raio: zod.coerce.number().optional().describe("Radius in kilometers"),
