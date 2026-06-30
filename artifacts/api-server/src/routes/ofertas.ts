@@ -2,6 +2,7 @@ import { Router } from "express";
 import { rateLimit } from "express-rate-limit";
 import { db, ofertasTable, usuariosTable, offerConfirmationsTable } from "@workspace/db";
 import { and, eq, ilike, sql, asc, gt, or, isNull, type SQL } from "drizzle-orm";
+import { computeQuality } from "../lib/quality";
 import {
   ListOfertasQueryParams,
   CreateOfertaBody,
@@ -85,35 +86,89 @@ function computeStatus(row: {
   return row.status as "nova" | "validada" | "suspeita" | "expirada";
 }
 
-function formatOferta(
-  r: Partial<typeof ofertasTable.$inferSelect> & {
-    id: number;
-    produto: string;
-    categoria: string;
-    preco: number;
-    mercado: string;
-    validade: Date | null;
-    dataCriacao: Date;
-    curtidas: number;
-    validacoes: number;
-    denuncias: number;
-    confirmacoes: number;
-    status: string;
-    usuarioId: number;
-    destacada: boolean;
-    patrocinada: boolean;
-    nome: string;
-    pontos: number;
-  },
-  lat?: number,
-  lng?: number
-) {
+function computeValidity(r: { dataCriacao: Date; ultimaConfirmacaoEm: Date | null; validade: Date | null; validacoes: number; confirmacoes: number }) {
+  if (r.validade && r.validade < new Date()) return { validityScore: 0, validityLabel: "Desatualizada" as const };
+  const ageH = (Date.now() - r.dataCriacao.getTime()) / 3_600_000;
+  const lastConfH = r.ultimaConfirmacaoEm
+    ? (Date.now() - r.ultimaConfirmacaoEm.getTime()) / 3_600_000
+    : ageH;
+  let score = 100;
+  if (ageH > 168) score -= 40;
+  else if (ageH > 72) score -= 20;
+  else if (ageH > 24) score -= 10;
+  if (lastConfH < 12) score += 15;
+  else if (lastConfH < 48) score += 7;
+  score = Math.min(100, Math.max(0, score));
+  const validityLabel =
+    lastConfH < 6           ? "Recém confirmada" as const
+    : score >= 70           ? "Ativa" as const
+    : score >= 40           ? "Expirando" as const
+    : score >= 20           ? "Possivelmente expirada" as const
+    :                         "Desatualizada" as const;
+  return { validityScore: score, validityLabel };
+}
+
+type OfertaRow = Partial<typeof ofertasTable.$inferSelect> & {
+  id: number;
+  produto: string;
+  categoria: string;
+  preco: number;
+  mercado: string;
+  validade: Date | null;
+  dataCriacao: Date;
+  ultimaValidacaoEm: Date | null;
+  ultimaConfirmacaoEm: Date | null;
+  curtidas: number;
+  validacoes: number;
+  denuncias: number;
+  confirmacoes: number;
+  status: string;
+  usuarioId: number;
+  destacada: boolean;
+  patrocinada: boolean;
+  tipoOrigem: string | null;
+  statusUsuario: string | null;
+  naoEncontreiMais: number;
+  dataEncerramento: Date | null;
+  renovacoes: number;
+  ultimaRenovacaoEm: Date | null;
+  nome: string;
+  pontos: number;
+};
+
+function formatOferta(r: OfertaRow, lat?: number, lng?: number) {
   const distancia =
     lat != null && lng != null && r.latitude != null && r.longitude != null
       ? haversineKm(lat, lng, r.latitude, r.longitude)
       : null;
 
   const score = (r.validacoes * 2 + r.curtidas + r.confirmacoes) - (r.denuncias * 3);
+  const superOferta = r.validacoes >= 5 || r.confirmacoes >= 3;
+  const emValidacao = r.status === "suspeita";
+  const { qualityScore, authorReliability, confiancaLabel } = computeQuality(
+    {
+      fotoUrl: r.fotoUrl ?? null,
+      marca: r.marca ?? null,
+      bairro: r.bairro ?? null,
+      cidade: r.cidade ?? null,
+      latitude: r.latitude ?? null,
+      longitude: r.longitude ?? null,
+      validacoes: r.validacoes,
+      confirmacoes: r.confirmacoes,
+      denuncias: r.denuncias,
+      dataCriacao: r.dataCriacao,
+      ultimaConfirmacaoEm: r.ultimaConfirmacaoEm,
+      tipoOrigem: r.tipoOrigem,
+    },
+    r.pontos,
+  );
+  const { validityScore, validityLabel } = computeValidity({
+    dataCriacao: r.dataCriacao,
+    ultimaConfirmacaoEm: r.ultimaConfirmacaoEm,
+    validade: r.validade,
+    validacoes: r.validacoes,
+    confirmacoes: r.confirmacoes,
+  });
 
   return {
     id: r.id,
@@ -125,6 +180,7 @@ function formatOferta(
     bairro: r.bairro ?? null,
     cidade: r.cidade ?? null,
     fotoUrl: r.fotoUrl ?? null,
+    imagemExibicao: r.fotoUrl ?? null,
     validade: r.validade ? r.validade.toISOString() : null,
     ultimaValidacaoEm: r.ultimaValidacaoEm ? r.ultimaValidacaoEm.toISOString() : null,
     ultimaConfirmacaoEm: r.ultimaConfirmacaoEm ? r.ultimaConfirmacaoEm.toISOString() : null,
@@ -136,6 +192,11 @@ function formatOferta(
     denuncias: r.denuncias,
     confirmacoes: r.confirmacoes,
     status: computeStatus(r),
+    statusUsuario: (r.statusUsuario ?? null) as "encerrada" | "excluida" | "pode_ter_acabado" | null,
+    naoEncontreiMais: r.naoEncontreiMais ?? 0,
+    dataEncerramento: r.dataEncerramento ? r.dataEncerramento.toISOString() : null,
+    renovacoes: r.renovacoes ?? 0,
+    ultimaRenovacaoEm: r.ultimaRenovacaoEm ? r.ultimaRenovacaoEm.toISOString() : null,
     usuarioId: r.usuarioId,
     usuario: r.nome,
     score,
@@ -143,6 +204,16 @@ function formatOferta(
     distancia,
     destacada: r.destacada,
     patrocinada: r.patrocinada,
+    tipoOrigem: (r.tipoOrigem ?? "organica") as "presencial" | "encarte" | "organica" | "admin" | "importada" | "recorrente" | "patrocinada_externa" | "galeria" | "camera",
+    superOferta,
+    emValidacao,
+    qualityScore,
+    authorReliability,
+    confiancaLabel: confiancaLabel as "Alta confiança" | "Confiável" | "Questionável" | "Aguardando validação" | "Nova",
+    validityScore,
+    validityLabel,
+    produtoCatalogo: null,
+    inteligenciaPreco: null,
   };
 }
 
@@ -161,6 +232,8 @@ router.get("/ofertas", async (req, res) => {
   if (cidade) conditions.push(ilike(ofertasTable.cidade, cidade));
   // Hide heavily-reported offers from public feed (still visible in admin)
   conditions.push(sql`${ofertasTable.denuncias} < 5`);
+  // Only active/valid offers
+  conditions.push(sql`${ofertasTable.status} NOT IN ('removida', 'recusada', 'arquivada')`);
 
   const rows = await db
     .select({
@@ -188,6 +261,12 @@ router.get("/ofertas", async (req, res) => {
       destacada: ofertasTable.destacada,
       patrocinada: ofertasTable.patrocinada,
       produtoNormalizado: ofertasTable.produtoNormalizado,
+      tipoOrigem: ofertasTable.tipoOrigem,
+      statusUsuario: ofertasTable.statusUsuario,
+      naoEncontreiMais: ofertasTable.naoEncontreiMais,
+      dataEncerramento: ofertasTable.dataEncerramento,
+      renovacoes: ofertasTable.renovacoes,
+      ultimaRenovacaoEm: ofertasTable.ultimaRenovacaoEm,
       nome: usuariosTable.nome,
       pontos: usuariosTable.pontos,
     })
@@ -218,7 +297,8 @@ router.get("/ofertas", async (req, res) => {
     });
   }
 
-  res.json(results);
+  // Return paginated format that the frontend expects (OfertasFeedResponse)
+  res.json({ items: results, nextCursor: null, hasMore: false });
 });
 
 // ── POST /api/ofertas ─────────────────────────────────────────────────────────

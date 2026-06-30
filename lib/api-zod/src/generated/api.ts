@@ -25,9 +25,11 @@ export const ListOfertasQueryParams = zod.object({
   lng: zod.coerce.number().optional().describe("User longitude"),
   raio: zod.coerce.number().optional().describe("Radius in kilometers"),
   ordenar: zod
-    .enum(["preco", "distancia", "validacoes", "recente", "score"])
+    .enum(["preco", "distancia", "validacoes", "recente", "score", "trending"])
     .optional()
     .describe("Sort order"),
+  limit: zod.coerce.number().min(1).max(200).optional().describe("Items per page"),
+  cursor: zod.coerce.string().optional().describe("Opaque pagination cursor"),
 });
 
 export const ListOfertasResponseItem = zod.object({
