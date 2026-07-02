@@ -36,6 +36,7 @@ import { RadarSection } from "@/components/radar-section";
 import { loadCoords, saveCoords, calculateDistanceKm } from "@/lib/distance";
 import { toast } from "sonner";
 import { useSeo } from "@/lib/seo";
+import { OfferSourceBadge } from "@/components/OfferSourceBadge";
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -460,10 +461,10 @@ function HotOfferCard({
             </>
           );
         })()}
-        <p className="text-[#6B7280] text-[11px] font-medium flex items-center gap-1 truncate">
-          <Store style={{ width: 10, height: 10, flexShrink: 0 }} />
-          {oferta.mercado}{oferta.bairro ? ` · ${oferta.bairro}` : ""}
-        </p>
+        <div className="flex items-center gap-2 mt-1">
+          <OfferSourceBadge mercadoNome={(oferta as any).mercadoNome ?? oferta.mercado} mercadoLogoUrl={(oferta as any).mercadoLogoUrl} usuarioNome={(oferta as any).usuarioNome ?? (oferta as any).autorNome ?? oferta.usuario} size="sm" />
+          {oferta.bairro && <p className="text-[#6B7280] text-[11px] font-medium truncate">{oferta.bairro}</p>}
+        </div>
         <div className="flex items-end justify-between mt-1.5">
           <div>
             <span className="text-[#16A34A] font-black text-xl leading-none">{R(oferta.preco)}</span>
@@ -578,10 +579,10 @@ function FeaturedOfferCard({
       <div className="p-4">
         <p className="text-[#111827] font-black text-[17px] leading-tight line-clamp-1">{primary}</p>
         {secondary && <p className="text-[#6B7280] text-xs leading-tight line-clamp-1 mt-0.5">{secondary}</p>}
-        <p className="text-[#6B7280] text-[12px] font-medium flex items-center gap-1 mt-1 mb-3 truncate">
-          <Store style={{ width: 10, height: 10, flexShrink: 0 }} />
-          {oferta.mercado}{oferta.bairro ? ` · ${oferta.bairro}` : ""}
-        </p>
+        <div className="flex items-center gap-2 mt-1 mb-3">
+          <OfferSourceBadge mercadoNome={(oferta as any).mercadoNome ?? oferta.mercado} mercadoLogoUrl={(oferta as any).mercadoLogoUrl} usuarioNome={(oferta as any).usuarioNome ?? (oferta as any).autorNome ?? oferta.usuario} size="sm" />
+          {oferta.bairro && <p className="text-[#6B7280] text-[12px] font-medium truncate">{oferta.bairro}</p>}
+        </div>
 
         <div className="flex gap-2">
           {/* Gold confirm button */}
@@ -897,7 +898,7 @@ function PatrocinadaCard({ oferta, onClick }: { oferta: Oferta; onClick: () => v
       </div>
       <div className="p-2.5">
         <p className="text-[12px] font-bold text-[#111827] line-clamp-1 leading-tight mb-0.5">{primary}</p>
-        <p className="text-[10px] text-[#9CA3AF] truncate mb-1">{oferta.mercado}</p>
+        <div className="mb-1"><OfferSourceBadge mercadoNome={(oferta as any).mercadoNome ?? oferta.mercado} mercadoLogoUrl={(oferta as any).mercadoLogoUrl} usuarioNome={(oferta as any).usuarioNome ?? (oferta as any).autorNome ?? oferta.usuario} size="sm" /></div>
         <p
           className="leading-none mb-2"
           style={{ fontSize: 21, fontWeight: 800, color: "#16A34A" }}
@@ -998,7 +999,7 @@ function TrendingCard({
             </>
           );
         })()}
-        <p className="text-[10px] text-[#9CA3AF] truncate mt-0.5 mb-2">{oferta.mercado}</p>
+        <div className="mt-0.5 mb-2"><OfferSourceBadge mercadoNome={(oferta as any).mercadoNome ?? oferta.mercado} mercadoLogoUrl={(oferta as any).mercadoLogoUrl} usuarioNome={(oferta as any).usuarioNome ?? (oferta as any).autorNome ?? oferta.usuario} size="sm" /></div>
         <p
           className="leading-none mb-2.5"
           style={{ fontSize: 20, fontWeight: 800, color: "#16A34A" }}
@@ -1052,9 +1053,10 @@ function ConfirmadaCard({ oferta }: { oferta: Oferta }) {
               </>
             );
           })()}
-          <p className="text-[11px] text-[#9CA3AF] truncate mt-0.5">
-            {oferta.mercado}{oferta.bairro ? ` · ${oferta.bairro}` : ""}
-          </p>
+          <div className="mt-0.5 flex items-center gap-2">
+            <OfferSourceBadge mercadoNome={(oferta as any).mercadoNome ?? oferta.mercado} mercadoLogoUrl={(oferta as any).mercadoLogoUrl} usuarioNome={(oferta as any).usuarioNome ?? (oferta as any).autorNome ?? oferta.usuario} size="sm" />
+            {oferta.bairro && <span className="text-[11px] text-[#9CA3AF] truncate">{oferta.bairro}</span>}
+          </div>
           <div className="flex items-center gap-2 mt-1">
             <span className="text-[10px] text-[#16A34A] flex items-center gap-0.5">
               <CheckCircle className="h-2.5 w-2.5" />
@@ -1143,9 +1145,8 @@ function BestValueCard({
             )}
           </div>
           <div className="flex items-center gap-1.5 text-[10px] text-[#9CA3AF] flex-wrap">
-            <span className="font-semibold text-[#6B7280]">
-              {oferta.mercado}{grupo.count > 1 ? " e outros" : ""}
-            </span>
+            <OfferSourceBadge mercadoNome={(oferta as any).mercadoNome ?? oferta.mercado} mercadoLogoUrl={(oferta as any).mercadoLogoUrl} usuarioNome={(oferta as any).usuarioNome ?? (oferta as any).autorNome ?? oferta.usuario} size="sm" />
+            {grupo.count > 1 && <span className="font-semibold text-[#6B7280]">+ {grupo.count - 1}</span>}
             {oferta.distancia != null && (
               <span>📍 {oferta.distancia.toFixed(1)} km · ⏱️ {tempoMin(oferta.distancia)} min</span>
             )}
@@ -1316,9 +1317,7 @@ function MaisCurtidasCard({
             <h3 className="text-xs font-black text-slate-900 leading-tight line-clamp-2 mb-1">{primary}</h3>
           );
         })()}
-        <p className="text-[11px] text-slate-400 truncate flex items-center gap-0.5 mb-1.5">
-          <Store className="h-2.5 w-2.5 shrink-0" /> {oferta.mercado}
-        </p>
+        <div className="mb-1.5"><OfferSourceBadge mercadoNome={(oferta as any).mercadoNome ?? oferta.mercado} mercadoLogoUrl={(oferta as any).mercadoLogoUrl} usuarioNome={(oferta as any).usuarioNome ?? (oferta as any).autorNome ?? oferta.usuario} size="sm" /></div>
         <div className="flex items-center justify-between">
           <span className="text-sm font-black text-[#16A34A]">{R(oferta.preco)}</span>
           <button
@@ -1814,7 +1813,7 @@ function ChegouAgoraCard({ oferta, onClick }: { oferta: Oferta; onClick: () => v
       </div>
       <p className="text-xs font-bold text-slate-900 leading-snug line-clamp-2">{oferta.produto}</p>
       <p className="text-base font-black text-[#16A34A] leading-none">{fmt(oferta.preco)}</p>
-      <p className="text-[10px] text-slate-500 truncate font-medium">{oferta.mercado}</p>
+      <OfferSourceBadge mercadoNome={(oferta as any).mercadoNome ?? oferta.mercado} mercadoLogoUrl={(oferta as any).mercadoLogoUrl} usuarioNome={(oferta as any).usuarioNome ?? (oferta as any).autorNome ?? oferta.usuario} size="sm" />
     </button>
   );
 }

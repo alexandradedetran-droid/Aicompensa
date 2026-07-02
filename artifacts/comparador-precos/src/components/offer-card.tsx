@@ -14,6 +14,7 @@ import { getProductDisplay } from "@/lib/visual-priority";
 import { getCurrentUser } from "@/lib/current-user";
 import { useLoginPrompt } from "@/lib/login-prompt";
 import { CommentsBottomSheet } from "@/components/CommentsBottomSheet";
+import { OfferSourceBadge } from "@/components/OfferSourceBadge";
 
 /* ── AindaCompensaBar ─────────────────────────────────────────────────────── */
 
@@ -220,16 +221,6 @@ function ehHoje(iso: string | null | undefined): boolean {
   if (!iso) return false;
   return isToday(new Date(iso));
 }
-
-const NIVEL_EMOJI: Record<string, string> = {
-  "Estagiário da Economia":    "🎒",
-  "Assistente de Ofertas":     "🔎",
-  "Bacharel das Compras":      "🎓",
-  "Especialista das Gôndolas": "🏪",
-  "Mestre das Pechinchas":     "💰",
-  "Doutor da Economia":        "🔬",
-  "PhD do Supermercado":       "🏆",
-};
 
 export function OfferCard({ oferta, index }: OfferCardProps) {
   const queryClient       = useQueryClient();
@@ -464,20 +455,21 @@ export function OfferCard({ oferta, index }: OfferCardProps) {
             })()}
 
             {/* Mercado + location */}
-            <div className="flex items-center gap-1 text-xs text-slate-500 flex-wrap">
-              <Store className="h-3 w-3 shrink-0 text-slate-400" />
-              <span className="font-semibold text-slate-700 truncate">{oferta.mercado}</span>
+            <div className="flex items-center gap-2 text-xs text-slate-500 flex-wrap">
+              <OfferSourceBadge
+                mercadoNome={(oferta as any).mercadoNome ?? oferta.mercado}
+                mercadoLogoUrl={(oferta as any).mercadoLogoUrl}
+                usuarioNome={(oferta as any).usuarioNome ?? (oferta as any).autorNome ?? oferta.usuario}
+                size="sm"
+              />
               {(oferta.bairro || oferta.cidade) && (
-                <>
-                  <span className="text-slate-300">·</span>
-                  <span className="text-slate-400 truncate">
-                    {oferta.bairro ?? oferta.cidade}
-                  </span>
-                </>
+                <span className="text-slate-400 truncate">
+                  {oferta.bairro ?? oferta.cidade}
+                </span>
               )}
               {oferta.distancia != null && (
                 <span className={cn("font-bold ml-auto shrink-0", oferta.distancia < 1.5 ? "text-[#B8900E]" : oferta.distancia < 5 ? "text-amber-600" : "text-slate-400")}>
-                  📍 {oferta.distancia.toFixed(1)} km
+                  Dist. {oferta.distancia.toFixed(1)} km
                 </span>
               )}
             </div>
@@ -528,10 +520,6 @@ export function OfferCard({ oferta, index }: OfferCardProps) {
                   <AlertTriangle className="h-3 w-3" /> {oferta.denuncias}
                 </span>
               )}
-              <span className="flex items-center gap-0.5 font-medium text-slate-500">
-                {NIVEL_EMOJI[oferta.nivelUsuario ?? "Estagiário da Economia"] ?? "🎒"}{" "}
-                {oferta.usuario?.split(" ")[0]}
-              </span>
               <span className="ml-auto flex items-center gap-0.5 font-medium text-slate-400">
                 <Clock className="h-3 w-3" />
                 {tempoPostado(oferta.dataCriacao)}

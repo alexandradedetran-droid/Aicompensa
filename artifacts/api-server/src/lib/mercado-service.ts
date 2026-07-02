@@ -108,6 +108,7 @@ export type MercadoOfertaRow = {
   tipoOrigem: string;
   statusUsuario: string | null;
   mercadoId: number | null;
+  mercadoLogoUrl: string | null;
 };
 
 // ── GET /api/mercados — list all active markets with offer counts ─────────────
@@ -489,6 +490,7 @@ export async function listMercadoOfertas(
       tipoOrigem:          ofertasTable.tipoOrigem,
       statusUsuario:       ofertasTable.statusUsuario,
       mercadoId:           ofertasTable.mercadoId,
+      mercadoLogoUrl:      mercadosSugeridosTable.logoUrl,
       nome:                usuariosTable.nome,
       pontos:              usuariosTable.pontos,
     })
@@ -670,10 +672,12 @@ export async function listMercadoLegacyOfertas(
       tipoOrigem:          ofertasTable.tipoOrigem,
       statusUsuario:       ofertasTable.statusUsuario,
       mercadoId:           ofertasTable.mercadoId,
+      mercadoLogoUrl:      mercadosSugeridosTable.logoUrl,
       nome:                usuariosTable.nome,
       pontos:              usuariosTable.pontos,
     })
     .from(ofertasTable)
+    .leftJoin(mercadosSugeridosTable, eq(ofertasTable.mercadoId, mercadosSugeridosTable.id))
     .innerJoin(usuariosTable, eq(ofertasTable.usuarioId, usuariosTable.id))
     .where(and(...conditions))
     .orderBy(desc(ofertasTable.dataCriacao), desc(ofertasTable.id))

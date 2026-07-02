@@ -19,6 +19,7 @@ import { OfertaModal, CATEGORY_CONFIG } from "@/components/oferta-modal";
 import { useSeo } from "@/lib/seo";
 import { resolveMarketBrandAsset, getBannerGradient } from "@/lib/market-brand-assets";
 import { setMercadoAtual } from "@/lib/mercado-atual";
+import { OfferSourceBadge } from "@/components/OfferSourceBadge";
 import { useCidadeAtiva, findRegiaoByCity, makeRegiaoFromCity } from "@/lib/cidade-ativa";
 
 const R = (n: number) =>
@@ -122,10 +123,18 @@ function OfertaRow({
         <p className="text-sm font-bold text-[#0B1023] truncate leading-snug">
           {oferta.produto}
         </p>
-        <p className="text-[10px] text-[#9CA3AF] flex items-center gap-1 mt-0.5">
-          <Clock className="h-2.5 w-2.5 shrink-0" />
-          {timeAgo}
-        </p>
+        <div className="text-[10px] text-[#9CA3AF] flex items-center gap-2 mt-0.5">
+          <OfferSourceBadge
+            mercadoNome={(oferta as any).mercadoNome ?? oferta.mercado}
+            mercadoLogoUrl={(oferta as any).mercadoLogoUrl}
+            usuarioNome={(oferta as any).usuarioNome ?? (oferta as any).autorNome ?? oferta.usuario}
+            size="sm"
+          />
+          <span className="flex items-center gap-1 min-w-0">
+            <Clock className="h-2.5 w-2.5 shrink-0" />
+            {timeAgo}
+          </span>
+        </div>
       </div>
 
       {/* Preço */}

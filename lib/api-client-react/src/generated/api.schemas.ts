@@ -94,6 +94,9 @@ export interface Oferta {
   marca?: string | null;
   preco: number;
   mercado: string;
+  mercadoId?: number | null;
+  mercadoNome?: string | null;
+  mercadoLogoUrl?: string | null;
   bairro?: string | null;
   cidade?: string | null;
   fotoUrl?: string | null;
@@ -106,6 +109,8 @@ export interface Oferta {
   denuncias: number;
   status: OfertaStatus;
   usuario: string;
+  usuarioNome?: string | null;
+  autorNome?: string | null;
   usuarioId: number;
   ultimaValidacaoEm?: string | null;
   score: number;

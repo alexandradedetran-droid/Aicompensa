@@ -535,6 +535,10 @@ router.get("/mercados/legacy/:legacyKey/ofertas", async (req, res) => {
       tipoOrigem:          r.tipoOrigem ?? "organica",
       statusUsuario:       r.statusUsuario ?? null,
       mercadoId:           r.mercadoId ?? null,
+      mercadoNome:         r.mercado ?? null,
+      mercadoLogoUrl:      r.mercadoLogoUrl ?? null,
+      usuarioNome:         r.nome,
+      autorNome:           r.nome,
     };
   });
 
@@ -615,6 +619,10 @@ router.get("/mercados/:id/ofertas", async (req, res) => {
       tipoOrigem:          r.tipoOrigem ?? "organica",
       statusUsuario:       r.statusUsuario ?? null,
       mercadoId:           r.mercadoId ?? null,
+      mercadoNome:         r.mercado ?? null,
+      mercadoLogoUrl:      r.mercadoLogoUrl ?? null,
+      usuarioNome:         r.nome,
+      autorNome:           r.nome,
     };
   });
 

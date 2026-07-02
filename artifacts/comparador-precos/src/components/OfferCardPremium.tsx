@@ -45,6 +45,7 @@ import { getCurrentUser } from "@/lib/current-user";
 import { useLoginPrompt } from "@/lib/login-prompt";
 import { AindaCompensaBar } from "@/components/offer-card";
 import { CommentsBottomSheet } from "@/components/CommentsBottomSheet";
+import { OfferSourceBadge } from "@/components/OfferSourceBadge";
 import { type GrupoOferta } from "@/lib/group-ofertas";
 
 /* ── colour tokens ────────────────────────────────────────────────────────── */
@@ -200,16 +201,6 @@ function OfferCardPremiumInner({
   grupo, index, onOpenModal, onCompare, isSaved, onSave, listaItemNome,
 }: OfferCardPremiumProps) {
   const oferta        = grupo.best;
-  const nomePublicadorRaw = (oferta as any).usuario || (oferta as any).nomeUsuario || (oferta as any).usuarioNome || "";
-  const formatNomePublicador = (nome: string) => {
-    const ignorar = new Set(["de", "da", "do", "das", "dos", "e"]);
-    const partes = nome.trim().split(/\s+/).filter(Boolean);
-    if (partes.length === 0) return "";
-    const primeiro = partes[0];
-    const sobrenome = partes.slice(1).find((p) => !ignorar.has(p.toLowerCase()));
-    return sobrenome ? `${primeiro} ${sobrenome[0].toUpperCase()}.` : primeiro;
-  };
-  const nomePublicador = formatNomePublicador(nomePublicadorRaw);
   const isMulti       = grupo.count > 1;
   const queryClient   = useQueryClient();
   const { requireLogin } = useLoginPrompt();
@@ -581,30 +572,25 @@ function OfferCardPremiumInner({
               </p>
             )}
 
-            {/* Store + tipo */}
-            <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-              <Store className="h-2.5 w-2.5 shrink-0" style={{ color: "rgba(255,255,255,0.3)" }} />
+            {/* Origem + tipo */}
+            <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+              <OfferSourceBadge
+                mercadoNome={(oferta as any).mercadoNome ?? oferta.mercado}
+                mercadoLogoUrl={(oferta as any).mercadoLogoUrl}
+                usuarioNome={(oferta as any).usuarioNome ?? (oferta as any).autorNome ?? oferta.usuario}
+                size="sm"
+                theme="dark"
+              />
               <span className="text-[11px] font-medium truncate" style={{ color: "rgba(255,255,255,0.38)" }}>
-                {oferta.mercado}{isMulti ? " e outros" : ""}
+                {(oferta.bairro ?? oferta.cidade) ?? (isMulti ? `${grupo.count} mercados` : "Origem da oferta")}
               </span>
-              {oferta.usuario && (
-  <span
-    className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full shrink-0"
-    style={{
-      background: "rgba(255,255,255,0.06)",
-      color: "rgba(255,255,255,0.42)",
-    }}
-  >
-    por {nomePublicador} 
-  </span>
-)}
               {oferta.tipoOrigem === "presencial" && (
                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0"
-                  style={{ background: GOLD2+"0.13)", color: GOLD }}>📸 Presencial</span>
+                  style={{ background: GOLD2+"0.13)", color: GOLD }}>Presencial</span>
               )}
               {oferta.tipoOrigem === "encarte" && (
                 <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full shrink-0"
-                  style={{ background: "rgba(168,85,247,0.14)", color: "#c084fc" }}>📰 Encarte</span>
+                  style={{ background: "rgba(168,85,247,0.14)", color: "#c084fc" }}>Encarte</span>
               )}
             </div>
 

@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { rateLimit } from "express-rate-limit";
-import { db, ofertasTable, usuariosTable, offerConfirmationsTable } from "@workspace/db";
+import { db, ofertasTable, usuariosTable, mercadosSugeridosTable, offerConfirmationsTable } from "@workspace/db";
 import { and, eq, ilike, sql, asc, gt, or, isNull, type SQL } from "drizzle-orm";
 import { computeQuality } from "../lib/quality";
 import {
@@ -114,6 +114,8 @@ type OfertaRow = Partial<typeof ofertasTable.$inferSelect> & {
   categoria: string;
   preco: number;
   mercado: string;
+  mercadoId: number | null;
+  mercadoLogoUrl?: string | null;
   validade: Date | null;
   dataCriacao: Date;
   ultimaValidacaoEm: Date | null;
@@ -177,6 +179,9 @@ function formatOferta(r: OfertaRow, lat?: number, lng?: number) {
     marca: r.marca ?? null,
     preco: r.preco,
     mercado: r.mercado,
+    mercadoId: r.mercadoId ?? null,
+    mercadoNome: r.mercado,
+    mercadoLogoUrl: r.mercadoLogoUrl ?? null,
     bairro: r.bairro ?? null,
     cidade: r.cidade ?? null,
     fotoUrl: r.fotoUrl ?? null,
@@ -199,6 +204,8 @@ function formatOferta(r: OfertaRow, lat?: number, lng?: number) {
     ultimaRenovacaoEm: r.ultimaRenovacaoEm ? r.ultimaRenovacaoEm.toISOString() : null,
     usuarioId: r.usuarioId,
     usuario: r.nome,
+    usuarioNome: r.nome,
+    autorNome: r.nome,
     score,
     nivelUsuario: getNivelUsuario(r.pontos),
     distancia,
@@ -243,6 +250,8 @@ router.get("/ofertas", async (req, res) => {
       marca: ofertasTable.marca,
       preco: ofertasTable.preco,
       mercado: ofertasTable.mercado,
+      mercadoId: ofertasTable.mercadoId,
+      mercadoLogoUrl: mercadosSugeridosTable.logoUrl,
       bairro: ofertasTable.bairro,
       cidade: ofertasTable.cidade,
       fotoUrl: ofertasTable.fotoUrl,
@@ -272,6 +281,7 @@ router.get("/ofertas", async (req, res) => {
     })
     .from(ofertasTable)
     .innerJoin(usuariosTable, eq(ofertasTable.usuarioId, usuariosTable.id))
+    .leftJoin(mercadosSugeridosTable, eq(ofertasTable.mercadoId, mercadosSugeridosTable.id))
     .where(conditions.length > 0 ? and(...conditions) : undefined)
     .orderBy(asc(ofertasTable.preco));
 
