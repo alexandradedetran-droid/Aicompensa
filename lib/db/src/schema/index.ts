@@ -138,6 +138,22 @@ export const ofertasTable = pgTable("ofertas", {
   folhetoCropUrl: text("folheto_crop_url"),
   /** URL of the full original flyer page. */
   folhetoOriginalUrl: text("folheto_original_url"),
+  /** Final product image chosen for this offer, when available. */
+  imagemResolvidaUrl: text("imagem_resolvida_url"),
+  /** Provenance of the final image shown on the offer card. */
+  origemImagem: text("origem_imagem")
+    .$type<"catalogo_interno" | "site_mercado" | "open_food_facts" | "folheto_crop" | "usuario_upload" | "sem_imagem">(),
+  /** Confidence score (0.00-1.00) of the image match, when applicable. */
+  imagemMatchScore: real("imagem_match_score"),
+  /** True when the importer suggested a catalog image but routed it to admin review. */
+  imagemRevisaoPendente: boolean("imagem_revisao_pendente").notNull().default(false),
+  /** Suggested catalog image kept for admin review when auto-selection was not safe enough. */
+  imagemSugeridaUrl: text("imagem_sugerida_url"),
+  /** Provenance of the suggested image stored for admin review. */
+  imagemSugeridaOrigem: text("imagem_sugerida_origem")
+    .$type<"catalogo_interno" | "site_mercado" | "open_food_facts" | "folheto_crop" | "usuario_upload" | "sem_imagem">(),
+  /** Resolver audit trail used to explain why the image was selected or rejected. */
+  imagemResolucaoMeta: jsonb("imagem_resolucao_meta").$type<Record<string, unknown>>(),
   /** Deduplication hash: mercadoId+produtoNorm+marca+unidade+preco+validade */
   hashDeduplicacao: text("hash_deduplicacao"),
   /** AI extraction confidence score (0.0000–1.0000). */
@@ -1050,6 +1066,15 @@ export const folhetoImportItemsTable = pgTable("folheto_import_items", {
   ofertaId:            integer("oferta_id").references(() => ofertasTable.id, { onDelete: "set null" }),
   rawText:             text("raw_text"),
   cropUrl:             text("crop_url"),
+  imagemResolvidaUrl:  text("imagem_resolvida_url"),
+  origemImagem:        text("origem_imagem")
+    .$type<"catalogo_interno" | "site_mercado" | "open_food_facts" | "folheto_crop" | "usuario_upload" | "sem_imagem">(),
+  imagemMatchScore:    real("imagem_match_score"),
+  imagemRevisaoPendente: boolean("imagem_revisao_pendente").notNull().default(false),
+  imagemSugeridaUrl:   text("imagem_sugerida_url"),
+  imagemSugeridaOrigem: text("imagem_sugerida_origem")
+    .$type<"catalogo_interno" | "site_mercado" | "open_food_facts" | "folheto_crop" | "usuario_upload" | "sem_imagem">(),
+  imagemResolucaoMeta: jsonb("imagem_resolucao_meta").$type<Record<string, unknown>>(),
   imageQualityScore:   integer("image_quality_score"),
   hashDeduplicacao:    text("hash_deduplicacao"),
   motivoRejeicao:      text("motivo_rejeicao"),
@@ -1060,6 +1085,8 @@ export const folhetoImportItemsTable = pgTable("folheto_import_items", {
   index("idx_fii_status").on(t.status),
   index("idx_fii_mercado").on(t.mercadoId),
   index("idx_fii_origem").on(t.origem),
+  index("idx_fii_origem_imagem").on(t.origemImagem),
+  index("idx_fii_imagem_revisao").on(t.imagemRevisaoPendente),
 ]);
 export type FolhetoImportItem = typeof folhetoImportItemsTable.$inferSelect;
 

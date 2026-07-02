@@ -18,6 +18,7 @@ import {
 import { eq, and, inArray, isNull, sql } from "drizzle-orm";
 import { ai } from "@workspace/integrations-gemini-ai";
 import { logger } from "./logger";
+import { resolveFlyerOfferImage } from "./flyer-image-resolution";
 
 // ── Configuração ───────────────────────────────────────────────────────────────
 
@@ -279,7 +280,7 @@ export async function publicarItem(
         bairro: item.bairro ?? source.bairro ?? undefined,
         cidade: item.cidade ?? source.cidade,
         validade: item.validade ? new Date(item.validade) : undefined,
-        fotoUrl: item.cropUrl ?? item.imageOriginalUrl ?? undefined,
+        fotoUrl: item.imagemResolvidaUrl ?? item.cropUrl ?? undefined,
         usuarioId: BOT_USER_ID,
         tipoOrigem: "importada",
         origem: item.origem ?? "ofertabot",
@@ -287,6 +288,13 @@ export async function publicarItem(
         folhetoImportId: importRecord.id,
         folhetoCropUrl: item.cropUrl ?? undefined,
         folhetoOriginalUrl: item.imageOriginalUrl ?? source.url,
+        imagemResolvidaUrl: item.imagemResolvidaUrl ?? undefined,
+        origemImagem: item.origemImagem ?? (item.cropUrl ? "folheto_crop" : "sem_imagem"),
+        imagemMatchScore: item.imagemMatchScore ?? undefined,
+        imagemRevisaoPendente: item.imagemRevisaoPendente ?? false,
+        imagemSugeridaUrl: item.imagemSugeridaUrl ?? undefined,
+        imagemSugeridaOrigem: item.imagemSugeridaOrigem ?? undefined,
+        imagemResolucaoMeta: item.imagemResolucaoMeta ?? undefined,
         hashDeduplicacao: item.hashDeduplicacao ?? undefined,
         confidenceScore: item.confianca ?? undefined,
         status: "nova",
@@ -382,9 +390,20 @@ async function processarItens(
     // >=98% + imagem oficial + sem duplicidade publica automaticamente.
     // 90-97% entra aprovada para fila rápida; abaixo disso segue revisão/manual.
     const conf = oferta.confianca ?? 0;
-    const officialImage = await hasOfficialImage(oferta.produtoNormalizado ?? oferta.produto);
-    const shouldAutoPublish = conf >= CONFIDENCE_AUTO_PUBLISH && officialImage;
-    const shouldFastQueue = conf >= CONFIDENCE_FAST_QUEUE;
+    const imageResolution = await resolveFlyerOfferImage({
+      produto: oferta.produto,
+      produtoNormalizado: oferta.produtoNormalizado,
+      marca: oferta.marca ?? undefined,
+      categoria: oferta.categoria ?? undefined,
+      unidade: oferta.unidade ?? undefined,
+    });
+    const shouldAutoPublish =
+      conf >= CONFIDENCE_AUTO_PUBLISH &&
+      !imageResolution.imagemRevisaoPendente &&
+      (imageResolution.imagemMatchScore ?? 0) >= 0.85;
+    const shouldFastQueue =
+      conf >= CONFIDENCE_FAST_QUEUE &&
+      !imageResolution.imagemRevisaoPendente;
     const shouldReview = conf >= CONFIDENCE_REVIEW;
     const status = !shouldReview ? "rejeitado" : shouldAutoPublish || shouldFastQueue ? "aprovado" : "revisao";
 
@@ -422,11 +441,11 @@ async function processarItens(
       .returning();
 
     // Registrar candidata de imagem se existir crop_url
-    if (item && oferta.produtoNormalizado) {
+    if (item && oferta.produtoNormalizado && item.cropUrl) {
       await db.insert(productImageCandidatesTable).values({
         produtoNormalizado: oferta.produtoNormalizado,
         origem: "folheto_crop",
-        imageUrl: source.url,
+        imageUrl: item.cropUrl,
         qualityScore: Math.round((conf) * 100),
         status: "candidato",
         sourceImportItemId: item.id,

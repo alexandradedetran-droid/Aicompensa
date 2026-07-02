@@ -302,6 +302,7 @@ export function startScheduler(): void {
             "",
             `Fonte: Atacadão Cuiabá — Tijucal (VTEX GraphQL)`,
             `Produtos capturados:   ${stats.total}`,
+            `Imagens catalogadas:   ${stats.catalogados}`,
             `Publicados:            ${stats.publicados}`,
             `Enviados p/ revisão:   ${stats.revisao}`,
             `Duplicados:            ${stats.duplicados}`,
