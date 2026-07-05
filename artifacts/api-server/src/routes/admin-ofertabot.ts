@@ -9,6 +9,7 @@ import { requireAdminConfigured, requireAdminToken } from "../middleware/admin-a
 import { runOfertaBot, publicarItemAdmin } from "../lib/ofertabot";
 import { runAtacadaoSiteImporter, importAtacadaoPayload } from "../lib/atacadao-site-importer";
 import { scrapeAtacadaoAPI } from "../lib/atacadao-api-scraper";
+import { runRedeMachadoImporter } from "../lib/rede-machado-site-importer";
 import { releaseOfertaBotRunLock, tryAcquireOfertaBotRunLock } from "../lib/ofertabot-run-lock";
 import { logger } from "../lib/logger";
 
@@ -22,6 +23,8 @@ let lastRun: { mode: RunMode; startedAt: Date; finishedAt: Date; status: "conclu
 
 let currentAtacadaoRun: { startedAt: Date } | null = null;
 let lastAtacadaoRun: { startedAt: Date; finishedAt: Date; status: "concluido" | "erro"; result?: unknown; error?: string } | null = null;
+let currentRedeMachadoRun: { startedAt: Date } | null = null;
+let lastRedeMachadoRun: { startedAt: Date; finishedAt: Date; status: "concluido" | "erro"; result?: unknown; error?: string } | null = null;
 
 // All time comparisons use BRT (UTC-3) so stats match the scheduler's trigger hours.
 function brtNow(): Date { return new Date(Date.now() - 3 * 60 * 60 * 1000); }
@@ -197,8 +200,8 @@ router.post("/api/admin/ofertabot/sources", ...guard, async (req, res) => {
   }
 
   const cidadeNorm = cidade.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-  if (!["cuiaba", "cuiabá", "varzea grande", "várzea grande"].includes(cidadeNorm)) {
-    res.status(400).json({ error: "Cidade deve ser Cuiabá ou Várzea Grande" });
+  if (!["cuiaba", "varzea grande", "sinop"].includes(cidadeNorm)) {
+    res.status(400).json({ error: "Cidade deve ser Cuiaba, Varzea Grande ou Sinop" });
     return;
   }
 
@@ -230,8 +233,8 @@ router.patch("/api/admin/ofertabot/sources/:id", ...guard, async (req, res) => {
 
   if (cidade && typeof cidade === "string") {
     const cidadeNorm = cidade.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim();
-    if (!["cuiaba", "cuiabá", "varzea grande", "várzea grande"].includes(cidadeNorm)) {
-      res.status(400).json({ error: "Cidade deve ser Cuiabá ou Várzea Grande" });
+    if (!["cuiaba", "varzea grande", "sinop"].includes(cidadeNorm)) {
+      res.status(400).json({ error: "Cidade deve ser Cuiaba, Varzea Grande ou Sinop" });
       return;
     }
   }
@@ -353,6 +356,36 @@ router.post("/api/admin/ofertabot/run-atacadao", ...guard, async (_req, res) => 
 // GET /api/admin/ofertabot/run-atacadao
 router.get("/api/admin/ofertabot/run-atacadao", ...guard, async (_req, res) => {
   res.json({ currentAtacadaoRun, lastAtacadaoRun });
+});
+
+// POST /api/admin/ofertabot/run-rede-machado
+router.post("/api/admin/ofertabot/run-rede-machado", ...guard, async (_req, res) => {
+  if (currentRedeMachadoRun) {
+    res.status(409).json({ error: "Scraper da Rede Machado ja esta em execucao", currentRedeMachadoRun });
+    return;
+  }
+
+  currentRedeMachadoRun = { startedAt: new Date() };
+  res.json({ ok: true, message: "Scraper da Rede Machado iniciado em background" });
+
+  setImmediate(async () => {
+    const startedAt = currentRedeMachadoRun?.startedAt ?? new Date();
+    try {
+      const result = await runRedeMachadoImporter();
+      lastRedeMachadoRun = { startedAt, finishedAt: new Date(), status: "concluido", result };
+      logger.info({ result }, "[admin-ofertabot] run-rede-machado concluido");
+    } catch (err) {
+      lastRedeMachadoRun = { startedAt, finishedAt: new Date(), status: "erro", error: err instanceof Error ? err.message : String(err) };
+      logger.error({ err }, "[admin-ofertabot] run-rede-machado falhou");
+    } finally {
+      currentRedeMachadoRun = null;
+    }
+  });
+});
+
+// GET /api/admin/ofertabot/run-rede-machado
+router.get("/api/admin/ofertabot/run-rede-machado", ...guard, async (_req, res) => {
+  res.json({ currentRedeMachadoRun, lastRedeMachadoRun });
 });
 
 // ── Imports ───────────────────────────────────────────────────────────────────

@@ -1,7 +1,7 @@
 /**
  * OfertaBot — motor automático de importação de folhetos por IA.
  *
- * Escopo geográfico: EXCLUSIVAMENTE Cuiabá-MT e Várzea Grande-MT.
+ * Escopo geográfico: Cuiabá-MT, Várzea Grande-MT e Sinop-MT.
  * Modo padrão: supervisionado (admin aprova antes de publicar).
  * Auto-publish: ativado por OFERTABOT_AUTO_PUBLISH=true.
  */
@@ -29,7 +29,7 @@ const CONFIDENCE_FAST_QUEUE   = 0.90;
 const CONFIDENCE_REVIEW       = 0.65;
 const TIMEOUT_PER_SOURCE  = 30_000; // 30s por fonte
 const MAX_SOURCES_PER_RUN = 10;
-const CIDADES_PERMITIDAS  = ["cuiabá", "cuiaba", "várzea grande", "varzea grande"];
+const CIDADES_PERMITIDAS  = ["cuiaba", "varzea grande", "sinop"];
 
 // ── Tipos internos ─────────────────────────────────────────────────────────────
 
@@ -115,7 +115,7 @@ REGRAS OBRIGATÓRIAS:
 - Separe cada produto individualmente. Nunca agrupe dois produtos.
 - Não invente produto, preço ou qualquer dado.
 - Se o preço estiver ilegível, marque confianca < 0.5.
-- Se a cidade não for Cuiabá-MT ou Várzea Grande-MT, marque confiancaGeo=0.
+- Se a cidade não for Cuiabá-MT, Várzea Grande-MT ou Sinop-MT, marque confiancaGeo=0.
 - Se a cidade não estiver clara, marque confiancaGeo=0.3.
 - Retorne APENAS JSON válido, sem texto fora do JSON.
 
@@ -138,7 +138,7 @@ Retorne no formato:
 {
   "mercado": "Nome do mercado",
   "loja": "Nome da loja/filial se identificado",
-  "cidade": "Cuiabá ou Várzea Grande",
+  "cidade": "Cuiabá, Várzea Grande ou Sinop",
   "bairro": "nome do bairro se visível",
   "estado": "MT",
   "validadeInicio": "YYYY-MM-DD ou null",
@@ -638,7 +638,7 @@ export async function runOfertaBot(): Promise<{ fontes: number; erros: number }>
     .where(
       and(
         eq(folhetoSourcesTable.ativo, true),
-        inArray(folhetoSourcesTable.cidade, ["Cuiabá", "Várzea Grande"]),
+        inArray(folhetoSourcesTable.cidade, ["Cuiabá", "Várzea Grande", "Sinop"]),
       ),
     )
     .orderBy(folhetoSourcesTable.prioridade)

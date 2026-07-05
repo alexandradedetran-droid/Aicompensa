@@ -14,6 +14,7 @@ import { runOfertaBot } from "./ofertabot";
 import { releaseOfertaBotRunLock, tryAcquireOfertaBotRunLock } from "./ofertabot-run-lock";
 import { scrapeAtacadaoAPI } from "./atacadao-api-scraper";
 import { importAtacadaoPayload } from "./atacadao-site-importer";
+import { runRedeMachadoImporter } from "./rede-machado-site-importer";
 import { logger } from "./logger";
 
 // ── BRT helpers ───────────────────────────────────────────────────────────────
@@ -237,6 +238,7 @@ async function runWeeklySummaryJob(): Promise<void> {
 let lastExpiringRunDate = "";
 let lastOfertaBotRunDate = "";
 let lastAtacadaoRunDate = "";
+let lastRedeMachadoRunDate = "";
 
 async function runExpiringOffersJob(): Promise<void> {
   if (lastExpiringRunDate === brasiliaDateString()) return;
@@ -322,6 +324,23 @@ export function startScheduler(): void {
       });
     }
 
+    // Rede Machado Sinop: captura de promocoes do site - 06h, 12h e 18h BRT
+    if ((hour === 6 || hour === 12 || hour === 18) && lastRedeMachadoRunDate !== `${brasiliaDateString()}-${hour}`) {
+      const redeMachadoKey = `${brasiliaDateString()}-${hour}`;
+      lastRedeMachadoRunDate = redeMachadoKey;
+      setImmediate(async () => {
+        const t0 = Date.now();
+        try {
+          const stats = await runRedeMachadoImporter();
+          const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+          logger.info({ ...stats, elapsed }, "[scheduler] rede machado scraper completed");
+        } catch (err) {
+          logger.error({ err, runKey: redeMachadoKey }, "[scheduler] rede machado scraper falhou");
+          lastRedeMachadoRunDate = "";
+        }
+      });
+    }
+
     // Sprint 21: OfertaBot autônomo — 06h, 12h e 18h BRT
     if ((hour === 6 || hour === 12 || hour === 18) && lastOfertaBotRunDate !== `${brasiliaDateString()}-${hour}`) {
       const runKey = `${brasiliaDateString()}-${hour}`;
@@ -347,5 +366,5 @@ export function startScheduler(): void {
     }
   }, 5 * 60 * 1000); // tick every 5 minutes
 
-  logger.info("[scheduler] started — daily 19h BRT, weekly Sunday 09h BRT, expiring 08h BRT, shopping analysis 08h/12h/18h BRT, atacadao scraper 06h/12h/18h BRT, ofertabot 06h/12h/18h BRT");
+  logger.info("[scheduler] started — daily 19h BRT, weekly Sunday 09h BRT, expiring 08h BRT, shopping analysis 08h/12h/18h BRT, atacadao scraper 06h/12h/18h BRT, rede machado scraper 06h/12h/18h BRT, ofertabot 06h/12h/18h BRT");
 }
