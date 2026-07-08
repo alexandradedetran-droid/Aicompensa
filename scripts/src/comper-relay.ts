@@ -186,33 +186,62 @@ async function main() {
     process.exit(1);
   }
 
-  // 4. Enviar para Railway — um encarte por vez para respeitar limite de 10MB do Express
+  // 4. Enviar para Railway — em lotes de até MAX_PAGES_PER_CHUNK páginas para evitar
+  //    timeout/reset de conexão do proxy Railway (limite empírico ~8MB por requisição).
+  const MAX_PAGES_PER_CHUNK = 4;
   let totalProcessados = 0, totalDuplicados = 0, totalErros = 0;
 
-  for (const encarte of relayEncartes) {
-    const sizeKb = encarte.pages.reduce((s, p) => s + p.sizeKb, 0);
+  async function sendChunk(chunkEncarte: RelayEncarte, chunkIndex?: number): Promise<void> {
+    const sizeKb = chunkEncarte.pages.reduce((s, p) => s + p.sizeKb, 0);
     const payloadSizeKb = Math.round(sizeKb * 1.37); // base64 overhead ~37%
-    console.log(`\n🚀 Enviando "${encarte.titulo}" (~${Math.round(payloadSizeKb / 1024)}MB)...`);
+    const label = chunkIndex !== undefined
+      ? `"${chunkEncarte.titulo}" chunk ${chunkIndex + 1}`
+      : `"${chunkEncarte.titulo}"`;
+    console.log(`\n🚀 Enviando ${label} (~${Math.round(payloadSizeKb / 1024)}MB, ${chunkEncarte.pages.length} págs)...`);
 
-    const res = await fetch(`${RAILWAY_URL}/api/admin/ofertabot/sources/${sourceId}/relay-comper`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${ADMIN_TOKEN}`,
-      },
-      body: JSON.stringify({ encartes: [encarte], htmlUrl: WP_SOURCE_URL }),
-      signal: AbortSignal.timeout(900_000), // 15 min por encarte (16 páginas Gemini ~10 min)
-    });
+    try {
+      const res = await fetch(`${RAILWAY_URL}/api/admin/ofertabot/sources/${sourceId}/relay-comper`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${ADMIN_TOKEN}`,
+        },
+        body: JSON.stringify({ encartes: [chunkEncarte], htmlUrl: WP_SOURCE_URL }),
+        signal: AbortSignal.timeout(900_000), // 15 min por chunk (Gemini paralelo ~3 min/4 págs)
+      });
 
-    const json = await res.json() as Record<string, unknown>;
-    if (!res.ok) {
-      console.error(`   ❌ HTTP ${res.status}:`, json);
+      const json = await res.json() as Record<string, unknown>;
+      if (!res.ok) {
+        console.error(`   ❌ HTTP ${res.status}:`, json);
+        totalErros++;
+      } else {
+        console.log(`   ✅ processados=${json["processados"]} duplicados=${json["duplicados"]} erros=${json["erros"]}`);
+        totalProcessados += Number(json["processados"] ?? 0);
+        totalDuplicados += Number(json["duplicados"] ?? 0);
+        totalErros += Number(json["erros"] ?? 0);
+      }
+    } catch (err) {
+      console.error(`   ❌ Erro de rede: ${err}`);
       totalErros++;
+    }
+  }
+
+  for (const encarte of relayEncartes) {
+    if (encarte.pages.length <= MAX_PAGES_PER_CHUNK) {
+      await sendChunk(encarte);
     } else {
-      console.log(`   ✅ processados=${json["processados"]} duplicados=${json["duplicados"]} erros=${json["erros"]}`);
-      totalProcessados += (json["processados"] as number) ?? 0;
-      totalDuplicados += (json["duplicados"] as number) ?? 0;
-      totalErros += (json["erros"] as number) ?? 0;
+      // Dividir em chunks de MAX_PAGES_PER_CHUNK páginas
+      for (let i = 0; i < encarte.pages.length; i += MAX_PAGES_PER_CHUNK) {
+        const chunkPages = encarte.pages.slice(i, i + MAX_PAGES_PER_CHUNK).map((p, idx) => ({ ...p, index: idx }));
+        const chunkNome = `${encarte.nome}_chunk${Math.floor(i / MAX_PAGES_PER_CHUNK) + 1}`;
+        const chunkTitulo = `${encarte.titulo} [pág ${i + 1}-${Math.min(i + MAX_PAGES_PER_CHUNK, encarte.pages.length)}]`;
+        await sendChunk({
+          nome: chunkNome,
+          titulo: chunkTitulo,
+          validade: encarte.validade,
+          pages: chunkPages,
+        }, Math.floor(i / MAX_PAGES_PER_CHUNK));
+      }
     }
   }
 
