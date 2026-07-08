@@ -6,6 +6,9 @@
   "scripts": {
     "hello": "tsx ./src/hello.ts",
     "scrape:atacadao": "tsx ./src/scrape-atacadao.ts",
+    "vtex:capture": "tsx ./src/vtex-capture.ts",
+    "vtex:capture:visible": "cross-env HEADLESS=false tsx ./src/vtex-capture.ts",
+    "comper:relay": "tsx ./src/comper-relay.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
