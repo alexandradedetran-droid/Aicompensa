@@ -186,31 +186,40 @@ async function main() {
     process.exit(1);
   }
 
-  // 4. Enviar para Railway
-  const totalSizeKb = relayEncartes.reduce((s, e) => s + e.pages.reduce((ps, p) => ps + p.sizeKb, 0), 0);
-  console.log(`\n🚀 Enviando ${relayEncartes.length} encartes para Railway (~${Math.round(totalSizeKb / 1024)}MB)...`);
+  // 4. Enviar para Railway — um encarte por vez para respeitar limite de 10MB do Express
+  let totalProcessados = 0, totalDuplicados = 0, totalErros = 0;
 
-  const res = await fetch(`${RAILWAY_URL}/api/admin/ofertabot/sources/${sourceId}/relay-comper`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${ADMIN_TOKEN}`,
-    },
-    body: JSON.stringify({ encartes: relayEncartes, htmlUrl: WP_SOURCE_URL }),
-    signal: AbortSignal.timeout(300_000), // 5 min
-  });
+  for (const encarte of relayEncartes) {
+    const sizeKb = encarte.pages.reduce((s, p) => s + p.sizeKb, 0);
+    const payloadSizeKb = Math.round(sizeKb * 1.37); // base64 overhead ~37%
+    console.log(`\n🚀 Enviando "${encarte.titulo}" (~${Math.round(payloadSizeKb / 1024)}MB)...`);
 
-  const json = await res.json();
-  if (!res.ok) {
-    console.error(`\n❌ Railway retornou HTTP ${res.status}:`, json);
-    process.exit(1);
+    const res = await fetch(`${RAILWAY_URL}/api/admin/ofertabot/sources/${sourceId}/relay-comper`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${ADMIN_TOKEN}`,
+      },
+      body: JSON.stringify({ encartes: [encarte], htmlUrl: WP_SOURCE_URL }),
+      signal: AbortSignal.timeout(900_000), // 15 min por encarte (16 páginas Gemini ~10 min)
+    });
+
+    const json = await res.json() as Record<string, unknown>;
+    if (!res.ok) {
+      console.error(`   ❌ HTTP ${res.status}:`, json);
+      totalErros++;
+    } else {
+      console.log(`   ✅ processados=${json["processados"]} duplicados=${json["duplicados"]} erros=${json["erros"]}`);
+      totalProcessados += (json["processados"] as number) ?? 0;
+      totalDuplicados += (json["duplicados"] as number) ?? 0;
+      totalErros += (json["erros"] as number) ?? 0;
+    }
   }
 
-  console.log(`\n✅ Relay concluído!`);
-  console.log(`   Processados: ${(json as Record<string, number>).processados}`);
-  console.log(`   Duplicados:  ${(json as Record<string, number>).duplicados}`);
-  console.log(`   Erros:       ${(json as Record<string, number>).erros}`);
-  console.log(`\n   Resposta completa:`, JSON.stringify(json, null, 2));
+  console.log(`\n📊 Resumo final:`);
+  console.log(`   Processados: ${totalProcessados}`);
+  console.log(`   Duplicados:  ${totalDuplicados}`);
+  console.log(`   Erros:       ${totalErros}`);
 }
 
 main().catch(err => {
