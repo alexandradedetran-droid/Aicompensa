@@ -12,11 +12,30 @@
  *   sourceId padrão = 7 (Comper #7 em produção)
  */
 
-const RAILWAY_URL = "https://workspaceapi-server-production-8491.up.railway.app";
-const ADMIN_TOKEN = "8616cf8dfbb07c39d29722cf01ac88eea602952e2469b5b869e536c5917bd9a7";
+import { readFileSync } from "node:fs";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
+
+// Carrega .env do diretório scripts/ sem depender de dotenv
+const __dir = dirname(fileURLToPath(import.meta.url));
+try {
+  const envFile = readFileSync(resolve(__dir, "../.env"), "utf8");
+  for (const line of envFile.split("\n")) {
+    const m = line.match(/^([A-Z_]+)=(.+)$/);
+    if (m) process.env[m[1]] = m[2]!.trim();
+  }
+} catch { /* .env opcional */ }
+
+const RAILWAY_URL = process.env["RAILWAY_URL"] ?? "https://workspaceapi-server-production-8491.up.railway.app";
+const ADMIN_TOKEN = process.env["ADMIN_TOKEN"] ?? "";
 const BOT_UA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Safari/537.36";
 const WP_MEDIA_API = "https://ofertas.comper.com.br/wp-json/wp/v2/media";
 const WP_SOURCE_URL = "https://ofertas.comper.com.br/cidade/cuiaba-mt/";
+
+if (!ADMIN_TOKEN) {
+  console.error("❌ ADMIN_TOKEN não definido. Crie scripts/.env com ADMIN_TOKEN=...");
+  process.exit(1);
+}
 
 const sourceId = Number(process.argv[2] ?? "7");
 
