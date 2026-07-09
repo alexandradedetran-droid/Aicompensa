@@ -17,17 +17,12 @@ function mercadoCityMatches(mercadoCidade: string | null) {
 }
 
 function ofertasBelongToMercado(mercadoId: number, mercadoNome: string, mercadoCidade: string | null) {
-  return and(
-    mercadoNameMatches(mercadoNome),
-    mercadoCityMatches(mercadoCidade),
-    or(
-      eq(ofertasTable.mercadoId, mercadoId),
+  return or(
+    eq(ofertasTable.mercadoId, mercadoId),
+    and(
       isNull(ofertasTable.mercadoId),
-      sql`EXISTS (
-        SELECT 1 FROM mercados_sugeridos ms
-        WHERE ms.id = ${ofertasTable.mercadoId}
-          AND TRIM(LOWER(ms.nome)) != TRIM(LOWER(${ofertasTable.mercado}))
-      )`,
+      mercadoNameMatches(mercadoNome),
+      mercadoCityMatches(mercadoCidade),
     ),
   );
 }
@@ -324,69 +319,10 @@ export async function listMercados(filter?: { cidade?: string; cidades?: string[
     ultimaOfertaEm: r.ultima_oferta_em ? new Date(r.ultima_oferta_em).toISOString() : null,
   }));
 
-  // Name-mismatch offers: mercadoId IS NOT NULL and market is ACTIVE, but the offer's
-  // mercado text doesn't match the linked market's name (wrong FK assignment by OCR/picker).
-  // These are invisible in all previous queries: counted under the wrong registered market.
-  const mismatchCidadeFilter = orphanCidadeFilter;
-  const mismatchResult = await db.execute(sql`
-    SELECT
-      o.mercado                                                             AS nome,
-      o.cidade,
-      MAX(o.bairro)                                                         AS bairro,
-      COUNT(CASE WHEN
-        o.status NOT IN ('expirada','pendente_validacao','revisao_manual','recusada','removida','arquivada')
-        AND (o.validade IS NULL OR o.validade > NOW())
-        AND o.denuncias < 5
-        AND COALESCE(u.bloqueado, false) = false
-        AND (o.status_usuario IS DISTINCT FROM 'excluida')
-        THEN 1 END
-      )::int                                                                AS total_ofertas,
-      MAX(o.data_criacao)                                                   AS ultima_oferta_em
-    FROM ofertas o
-    INNER JOIN mercados_sugeridos ms
-      ON ms.id = o.mercado_id
-      AND ms.ativo = TRUE
-      AND TRIM(LOWER(ms.nome)) != TRIM(LOWER(o.mercado))
-    LEFT JOIN usuarios u ON u.id = o.usuario_id
-    WHERE o.mercado_id IS NOT NULL
-      AND NOT EXISTS (
-        SELECT 1 FROM mercados_sugeridos ms2
-        WHERE TRIM(LOWER(ms2.nome)) = TRIM(LOWER(o.mercado))
-          AND ms2.ativo = TRUE
-      )
-      ${mismatchCidadeFilter}
-    GROUP BY o.mercado, o.cidade
-    HAVING COUNT(CASE WHEN
-      o.status NOT IN ('expirada','pendente_validacao','revisao_manual','recusada','removida','arquivada')
-      AND (o.validade IS NULL OR o.validade > NOW())
-      AND o.denuncias < 5
-      AND COALESCE(u.bloqueado, false) = false
-      AND (o.status_usuario IS DISTINCT FROM 'excluida')
-      THEN 1 END
-    ) > 0
-  `);
-
-  const mismatchItems: MercadoListItem[] = (mismatchResult.rows as any[]).map(r => ({
-    id:             null,
-    legacyKey:      makeLegacyKey(r.nome, r.cidade ?? null),
-    isLegacy:       true,
-    nome:           r.nome,
-    cidade:         r.cidade ?? null,
-    bairro:         r.bairro ?? null,
-    estado:         null,
-    lat:            null,
-    lng:            null,
-    ativo:          true,
-    logoUrl:        null,
-    fachadaUrl:     null,
-    totalOfertas:   r.total_ofertas ?? 0,
-    ultimaOfertaEm: r.ultima_oferta_em ? new Date(r.ultima_oferta_em).toISOString() : null,
-  }));
-
   // Merge all sources. Deduplicate by accent-normalized slug (makeLegacyKey), preferring
-  // registered markets over legacy/mismatch entries for the same market name written
+  // registered markets over legacy entries for the same market name written
   // with or without accents (e.g. "America" and "América" → same slug "america~cuiaba").
-  const all = [...registered, ...legacyItems, ...orphanItems, ...mismatchItems];
+  const all = [...registered, ...legacyItems, ...orphanItems];
   const seenBySlug = new Map<string, MercadoListItem>();
   for (const m of all) {
     const slugKey = makeLegacyKey(m.nome, m.cidade);
@@ -539,18 +475,6 @@ export async function getMercadoLegacyByKey(legacyKey: string): Promise<MercadoD
           AND (ms.cidade IS NULL OR o.cidade IS NULL OR TRIM(LOWER(ms.cidade)) = TRIM(LOWER(o.cidade)))
           AND ms.ativo = TRUE
       )
-    UNION
-    SELECT DISTINCT o.mercado AS nome, o.cidade
-    FROM ofertas o
-    INNER JOIN mercados_sugeridos ms
-      ON ms.id = o.mercado_id
-      AND ms.ativo = TRUE
-      AND TRIM(LOWER(ms.nome)) != TRIM(LOWER(o.mercado))
-    WHERE NOT EXISTS (
-      SELECT 1 FROM mercados_sugeridos ms2
-      WHERE TRIM(LOWER(ms2.nome)) = TRIM(LOWER(o.mercado))
-        AND ms2.ativo = TRUE
-    )
   `);
 
   const match = (distinctResult.rows as { nome: string; cidade: string | null }[]).find(
@@ -560,19 +484,10 @@ export async function getMercadoLegacyByKey(legacyKey: string): Promise<MercadoD
 
   const { nome, cidade } = match;
 
-  // Condition shared by stats and categories: pure legacy (mercadoId IS NULL) OR
-  // name-mismatch (mercadoId IS NOT NULL but linked market has a different name).
-  const legacyOrMismatchWhere = sql`
-    TRIM(LOWER(o.mercado)) = TRIM(LOWER(${nome}))
+  const legacyWhere = sql`
+    o.mercado_id IS NULL
+    AND TRIM(LOWER(o.mercado)) = TRIM(LOWER(${nome}))
     AND (${cidade} IS NULL OR o.cidade IS NULL OR TRIM(LOWER(o.cidade)) = TRIM(LOWER(${cidade})))
-    AND (
-      o.mercado_id IS NULL
-      OR EXISTS (
-        SELECT 1 FROM mercados_sugeridos ms
-        WHERE ms.id = o.mercado_id
-          AND TRIM(LOWER(ms.nome)) != TRIM(LOWER(o.mercado))
-      )
-    )
   `;
 
   const statsResult = await db.execute(sql`
@@ -589,14 +504,14 @@ export async function getMercadoLegacyByKey(legacyKey: string): Promise<MercadoD
       MAX(o.bairro) AS bairro
     FROM ofertas o
     LEFT JOIN usuarios u ON u.id = o.usuario_id
-    WHERE ${legacyOrMismatchWhere}
+    WHERE ${legacyWhere}
   `);
 
   const catResult = await db.execute(sql`
     SELECT o.categoria, COUNT(*)::int AS total
     FROM ofertas o
     LEFT JOIN usuarios u ON u.id = o.usuario_id
-    WHERE ${legacyOrMismatchWhere}
+    WHERE ${legacyWhere}
       AND o.status NOT IN ('expirada','pendente_validacao','revisao_manual','recusada','removida','arquivada')
       AND (o.validade IS NULL OR o.validade > NOW())
       AND o.denuncias < 5
@@ -639,12 +554,8 @@ export async function listMercadoLegacyOfertas(
   limit: number,
   cursor: { val: number; id: number } | null,
 ): Promise<{ rows: MercadoOfertaRow[]; hasMore: boolean }> {
-  // Include pure legacy (mercadoId IS NULL) and name-mismatch offers (wrong FK).
   const conditions: any[] = [
-    or(
-      isNull(ofertasTable.mercadoId),
-      sql`EXISTS (SELECT 1 FROM mercados_sugeridos ms WHERE ms.id = ${ofertasTable.mercadoId} AND TRIM(LOWER(ms.nome)) != TRIM(LOWER(${ofertasTable.mercado})))`,
-    ),
+    isNull(ofertasTable.mercadoId),
     sql`TRIM(LOWER(${ofertasTable.mercado})) = TRIM(LOWER(${nome}))`,
     cidade
       ? sql`(${ofertasTable.cidade} IS NULL OR TRIM(LOWER(${ofertasTable.cidade})) = TRIM(LOWER(${cidade})))`
