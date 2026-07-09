@@ -150,12 +150,13 @@ function getSafeDisplayImage(r: {
   const origem = r.origemImagem ?? null;
   const score = r.imagemMatchScore ?? null;
   const isCatalogImage = origem === "catalogo_interno" || origem === "site_mercado" || origem === "open_food_facts";
+  const isFolhetoImage = origem === "folheto_crop" || (cropUrl !== null && fotoUrl === cropUrl);
 
-  if (cropUrl && (r.imagemRevisaoPendente || (isCatalogImage && (score == null || score < 0.92)))) {
-    return cropUrl;
+  if (!fotoUrl || isFolhetoImage || r.imagemRevisaoPendente || (isCatalogImage && (score == null || score < 0.92))) {
+    return null;
   }
 
-  return fotoUrl ?? cropUrl;
+  return fotoUrl;
 }
 function formatOferta(r: OfertaRow, lat?: number, lng?: number) {
   const distancia =

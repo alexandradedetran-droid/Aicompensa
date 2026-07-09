@@ -280,7 +280,7 @@ export async function publicarItem(
         bairro: item.bairro ?? source.bairro ?? undefined,
         cidade: item.cidade ?? source.cidade,
         validade: item.validade ? new Date(item.validade) : undefined,
-        fotoUrl: item.imagemResolvidaUrl ?? item.cropUrl ?? undefined,
+        fotoUrl: item.imagemResolvidaUrl ?? undefined,
         usuarioId: BOT_USER_ID,
         tipoOrigem: "importada",
         origem: item.origem ?? "ofertabot",
@@ -289,7 +289,7 @@ export async function publicarItem(
         folhetoCropUrl: item.cropUrl ?? undefined,
         folhetoOriginalUrl: item.imageOriginalUrl ?? source.url,
         imagemResolvidaUrl: item.imagemResolvidaUrl ?? undefined,
-        origemImagem: item.origemImagem ?? (item.cropUrl ? "folheto_crop" : "sem_imagem"),
+        origemImagem: item.imagemResolvidaUrl ? (item.origemImagem ?? "catalogo_interno") : "sem_imagem",
         imagemMatchScore: item.imagemMatchScore ?? undefined,
         imagemRevisaoPendente: item.imagemRevisaoPendente ?? false,
         imagemSugeridaUrl: item.imagemSugeridaUrl ?? undefined,
@@ -439,18 +439,6 @@ async function processarItens(
         motivoRejeicao: status === "rejeitado" ? `Confiança baixa: ${conf}` : undefined,
       })
       .returning();
-
-    // Registrar candidata de imagem se existir crop_url
-    if (item && oferta.produtoNormalizado && item.cropUrl) {
-      await db.insert(productImageCandidatesTable).values({
-        produtoNormalizado: oferta.produtoNormalizado,
-        origem: "folheto_crop",
-        imageUrl: item.cropUrl,
-        qualityScore: Math.round((conf) * 100),
-        status: "candidato",
-        sourceImportItemId: item.id,
-      }).catch(() => {});
-    }
 
     // Auto-publicação autônoma somente quando a regra forte é satisfeita.
     if (status === "aprovado" && item) {

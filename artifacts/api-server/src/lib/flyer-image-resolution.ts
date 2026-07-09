@@ -353,17 +353,11 @@ export async function resolveFlyerOfferImage(input: ResolveFlyerImageInput): Pro
   const reviewCandidate = best && best.score >= 0.65 && best.score < 0.85 ? best : null;
   const autoCandidate = best && best.score >= 0.85 ? best : null;
 
-  const imagemResolvidaUrl = autoCandidate
-    ? autoCandidate.candidate.url
-    : input.cropUrl?.trim()
-      ? input.cropUrl.trim()
-      : null;
+  const imagemResolvidaUrl = autoCandidate ? autoCandidate.candidate.url : null;
 
   const origemImagem: OfferImageOrigin = autoCandidate
     ? autoCandidate.candidate.origin
-    : input.cropUrl?.trim()
-      ? "folheto_crop"
-      : "sem_imagem";
+    : "sem_imagem";
 
   const imagemRevisaoPendente = Boolean(reviewCandidate);
   const imagemSugeridaUrl = reviewCandidate?.candidate.url ?? null;
