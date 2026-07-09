@@ -14,6 +14,25 @@ import { requireAuth } from "../middleware/auth";
 
 const router = Router();
 
+function getSafeDisplayImage(r: {
+  fotoUrl?: string | null;
+  folhetoCropUrl?: string | null;
+  origemImagem?: string | null;
+  imagemMatchScore?: number | null;
+  imagemRevisaoPendente?: boolean | null;
+}): string | null {
+  const cropUrl = r.folhetoCropUrl?.trim() || null;
+  const fotoUrl = r.fotoUrl?.trim() || null;
+  const origem = r.origemImagem ?? null;
+  const score = r.imagemMatchScore ?? null;
+  const isCatalogImage = origem === "catalogo_interno" || origem === "site_mercado" || origem === "open_food_facts";
+
+  if (cropUrl && (r.imagemRevisaoPendente || (isCatalogImage && (score == null || score < 0.92)))) {
+    return cropUrl;
+  }
+
+  return fotoUrl ?? cropUrl;
+}
 // ── GET /api/mercados-patrocinados/feed ───────────────────────────────────────
 router.get("/mercados-patrocinados/feed", async (req, res) => {
   const { cidade } = req.query as { cidade?: string };
@@ -500,6 +519,7 @@ router.get("/mercados/legacy/:legacyKey/ofertas", async (req, res) => {
 
   const items = trimmed.map(r => {
     const score = r.validacoes * 2 + r.curtidas + r.confirmacoes - r.denuncias * 3;
+    const imagemExibicao = getSafeDisplayImage(r);
     return {
       id:                  r.id,
       produto:             r.produto,
@@ -514,8 +534,8 @@ router.get("/mercados/legacy/:legacyKey/ofertas", async (req, res) => {
       mercado:             r.mercado,
       bairro:              r.bairro ?? null,
       cidade:              r.cidade ?? null,
-      fotoUrl:             r.fotoUrl ?? null,
-      imagemExibicao:      r.fotoUrl ?? null,
+      fotoUrl:             imagemExibicao,
+      imagemExibicao,
       validade:            r.validade ? r.validade.toISOString() : null,
       latitude:            r.latitude ?? null,
       longitude:           r.longitude ?? null,
@@ -584,6 +604,7 @@ router.get("/mercados/:id/ofertas", async (req, res) => {
 
   const items = trimmed.map(r => {
     const score = r.validacoes * 2 + r.curtidas + r.confirmacoes - r.denuncias * 3;
+    const imagemExibicao = getSafeDisplayImage(r);
     return {
       id:                  r.id,
       produto:             r.produto,
@@ -598,8 +619,8 @@ router.get("/mercados/:id/ofertas", async (req, res) => {
       mercado:             r.mercado,
       bairro:              r.bairro ?? null,
       cidade:              r.cidade ?? null,
-      fotoUrl:             r.fotoUrl ?? null,
-      imagemExibicao:      r.fotoUrl ?? null,
+      fotoUrl:             imagemExibicao,
+      imagemExibicao,
       validade:            r.validade ? r.validade.toISOString() : null,
       latitude:            r.latitude ?? null,
       longitude:           r.longitude ?? null,

@@ -6,15 +6,28 @@ import { eq, sql, desc, and, or, isNull, gt, ilike } from "drizzle-orm";
 // When mercadoCidade is set, legacy fallback also validates city to avoid
 // cross-city collisions between markets with the same name (e.g. two "Comper"s).
 // If either side has no city, city check is skipped for backward compatibility.
+function mercadoNameMatches(mercadoNome: string) {
+  return sql`TRIM(lower(${ofertasTable.mercado})) = TRIM(lower(${mercadoNome}))`;
+}
+
+function mercadoCityMatches(mercadoCidade: string | null) {
+  return mercadoCidade
+    ? sql`(${ofertasTable.cidade} IS NULL OR TRIM(lower(${ofertasTable.cidade})) = TRIM(lower(${mercadoCidade})))`
+    : undefined;
+}
+
 function ofertasBelongToMercado(mercadoId: number, mercadoNome: string, mercadoCidade: string | null) {
-  return or(
-    eq(ofertasTable.mercadoId, mercadoId),
-    and(
+  return and(
+    mercadoNameMatches(mercadoNome),
+    mercadoCityMatches(mercadoCidade),
+    or(
+      eq(ofertasTable.mercadoId, mercadoId),
       isNull(ofertasTable.mercadoId),
-      sql`TRIM(lower(${ofertasTable.mercado})) = TRIM(lower(${mercadoNome}))`,
-      mercadoCidade
-        ? sql`(${ofertasTable.cidade} IS NULL OR TRIM(lower(${ofertasTable.cidade})) = TRIM(lower(${mercadoCidade})))`
-        : undefined,
+      sql`EXISTS (
+        SELECT 1 FROM mercados_sugeridos ms
+        WHERE ms.id = ${ofertasTable.mercadoId}
+          AND TRIM(LOWER(ms.nome)) != TRIM(LOWER(${ofertasTable.mercado}))
+      )`,
     ),
   );
 }
@@ -88,6 +101,10 @@ export type MercadoOfertaRow = {
   bairro: string | null;
   cidade: string | null;
   fotoUrl: string | null;
+  folhetoCropUrl: string | null;
+  origemImagem: string | null;
+  imagemMatchScore: number | null;
+  imagemRevisaoPendente: boolean | null;
   validade: Date | null;
   latitude: number | null;
   longitude: number | null;
@@ -472,6 +489,10 @@ export async function listMercadoOfertas(
       bairro:              ofertasTable.bairro,
       cidade:              ofertasTable.cidade,
       fotoUrl:             ofertasTable.fotoUrl,
+      folhetoCropUrl:      ofertasTable.folhetoCropUrl,
+      origemImagem:        ofertasTable.origemImagem,
+      imagemMatchScore:    ofertasTable.imagemMatchScore,
+      imagemRevisaoPendente: ofertasTable.imagemRevisaoPendente,
       validade:            ofertasTable.validade,
       latitude:            ofertasTable.latitude,
       longitude:           ofertasTable.longitude,
@@ -654,6 +675,10 @@ export async function listMercadoLegacyOfertas(
       bairro:              ofertasTable.bairro,
       cidade:              ofertasTable.cidade,
       fotoUrl:             ofertasTable.fotoUrl,
+      folhetoCropUrl:      ofertasTable.folhetoCropUrl,
+      origemImagem:        ofertasTable.origemImagem,
+      imagemMatchScore:    ofertasTable.imagemMatchScore,
+      imagemRevisaoPendente: ofertasTable.imagemRevisaoPendente,
       validade:            ofertasTable.validade,
       latitude:            ofertasTable.latitude,
       longitude:           ofertasTable.longitude,

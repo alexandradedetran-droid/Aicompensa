@@ -138,6 +138,25 @@ type OfertaRow = Partial<typeof ofertasTable.$inferSelect> & {
   pontos: number;
 };
 
+function getSafeDisplayImage(r: {
+  fotoUrl?: string | null;
+  folhetoCropUrl?: string | null;
+  origemImagem?: string | null;
+  imagemMatchScore?: number | null;
+  imagemRevisaoPendente?: boolean | null;
+}): string | null {
+  const cropUrl = r.folhetoCropUrl?.trim() || null;
+  const fotoUrl = r.fotoUrl?.trim() || null;
+  const origem = r.origemImagem ?? null;
+  const score = r.imagemMatchScore ?? null;
+  const isCatalogImage = origem === "catalogo_interno" || origem === "site_mercado" || origem === "open_food_facts";
+
+  if (cropUrl && (r.imagemRevisaoPendente || (isCatalogImage && (score == null || score < 0.92)))) {
+    return cropUrl;
+  }
+
+  return fotoUrl ?? cropUrl;
+}
 function formatOferta(r: OfertaRow, lat?: number, lng?: number) {
   const distancia =
     lat != null && lng != null && r.latitude != null && r.longitude != null
@@ -171,6 +190,7 @@ function formatOferta(r: OfertaRow, lat?: number, lng?: number) {
     validacoes: r.validacoes,
     confirmacoes: r.confirmacoes,
   });
+  const imagemExibicao = getSafeDisplayImage(r);
 
   return {
     id: r.id,
@@ -184,8 +204,8 @@ function formatOferta(r: OfertaRow, lat?: number, lng?: number) {
     mercadoLogoUrl: r.mercadoLogoUrl ?? null,
     bairro: r.bairro ?? null,
     cidade: r.cidade ?? null,
-    fotoUrl: r.fotoUrl ?? null,
-    imagemExibicao: r.fotoUrl ?? null,
+    fotoUrl: imagemExibicao,
+    imagemExibicao,
     validade: r.validade ? r.validade.toISOString() : null,
     ultimaValidacaoEm: r.ultimaValidacaoEm ? r.ultimaValidacaoEm.toISOString() : null,
     ultimaConfirmacaoEm: r.ultimaConfirmacaoEm ? r.ultimaConfirmacaoEm.toISOString() : null,
@@ -255,6 +275,10 @@ router.get("/ofertas", async (req, res) => {
       bairro: ofertasTable.bairro,
       cidade: ofertasTable.cidade,
       fotoUrl: ofertasTable.fotoUrl,
+      folhetoCropUrl: ofertasTable.folhetoCropUrl,
+      origemImagem: ofertasTable.origemImagem,
+      imagemMatchScore: ofertasTable.imagemMatchScore,
+      imagemRevisaoPendente: ofertasTable.imagemRevisaoPendente,
       validade: ofertasTable.validade,
       latitude: ofertasTable.latitude,
       longitude: ofertasTable.longitude,

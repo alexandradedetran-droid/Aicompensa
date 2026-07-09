@@ -58,11 +58,44 @@ const STOPWORDS = new Set([
   "tipo", "tradicional", "oferta", "promo", "promocao", "leve",
 ]);
 
+const KNOWN_BRANDS = new Set([
+  "nescau", "xaropinho", "seara", "excelsior", "sadia", "perdigao", "aurora",
+  "nestle", "italac", "piracanjuba", "tirol", "elege", "lacta", "garoto",
+  "pilao", "3 coracoes", "melitta", "heineken", "coca cola", "pepsi",
+]);
+
+const GENERIC_PRODUCT_TOKENS = new Set([
+  "achocolatado", "chocolate", "cacau", "po", "pizza", "calabresa", "mussarela",
+  "congelada", "congelado", "lata", "garrafa", "pacote", "caixa", "pote",
+]);
+
 function tokenize(text: string): string[] {
   return normalizeForMatch(text)
     .split(/\s+/)
     .map((token) => token.trim())
     .filter((token) => token.length > 1 && !STOPWORDS.has(token));
+}
+
+function extractKnownBrands(text: string): Set<string> {
+  const normalized = normalizeText(text);
+  const found = new Set<string>();
+  for (const brand of KNOWN_BRANDS) {
+    const pattern = new RegExp(`(^|\\s)${brand.replace(/\\s+/g, "\\\\s+")}(\\s|$)`);
+    if (pattern.test(normalized)) found.add(brand);
+  }
+  return found;
+}
+
+function hasBrandConflict(offerText: string, candidate: FlyerImageCandidate, marca?: string | null): boolean {
+  const offerBrands = extractKnownBrands(`${offerText} ${marca ?? ""}`);
+  const candidateBrands = extractKnownBrands(`${candidate.name} ${candidate.brand ?? ""}`);
+  const explicitMarca = marca ? normalizeText(marca) : "";
+
+  if (explicitMarca) offerBrands.add(explicitMarca);
+  if (candidate.brand) candidateBrands.add(normalizeText(candidate.brand));
+  if (offerBrands.size === 0 || candidateBrands.size === 0) return false;
+
+  return ![...offerBrands].some((brand) => candidateBrands.has(brand));
 }
 
 function buildVariantProfile(text: string): VariantProfile {
@@ -128,6 +161,7 @@ function calculateMatchScore(
   categoria?: string | null,
   unidade?: string | null,
 ): number {
+  if (hasBrandConflict(offerText, candidate, marca)) return 0;
   if (hasVariantConflict(offerText, candidate.name)) return 0;
   if (quantitiesConflict(offerText, candidate.quantityText ?? candidate.name, unidade)) return 0;
 
@@ -138,9 +172,13 @@ function calculateMatchScore(
   const offerSet = new Set(offerTokens);
   const candidateSet = new Set(candidateTokens);
   const intersection = [...offerSet].filter((token) => candidateSet.has(token)).length;
+  const distinctiveIntersection = [...offerSet].filter((token) => candidateSet.has(token) && !GENERIC_PRODUCT_TOKENS.has(token)).length;
   const union = new Set([...offerSet, ...candidateSet]).size;
   const jaccard = union > 0 ? intersection / union : 0;
   const containment = offerSet.size > 0 ? intersection / offerSet.size : 0;
+
+  if (intersection < 2 && normalizeProductName(offerText) !== normalizeProductName(candidate.name)) return 0;
+  if (distinctiveIntersection === 0 && !marca) return Math.min(0.64, Math.max(jaccard, containment * 0.7));
 
   let score = Math.max(jaccard, containment * 0.92);
 
@@ -241,7 +279,6 @@ async function loadCatalogCandidates(
         or(
           eq(productImageCandidatesTable.produtoNormalizado, normalized),
           ilike(productImageCandidatesTable.produtoNormalizado, `${normalized}%`),
-          ilike(productImageCandidatesTable.produtoNormalizado, `%${normalized}%`),
         ),
       ),
     )
